@@ -461,7 +461,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       g.style.left = `${e.clientX}px`;
       g.style.top = `${e.clientY}px`;
       const t = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest("[data-bt-target]") as HTMLElement | null;
-      setDropHot(t ? `${t.dataset.side}${t.dataset.ship}` : null);
+      setDropHot(t ? `${t.dataset["side"]}${t.dataset["ship"]}` : null);
     };
     const up = (e: PointerEvent) => {
       const d = drag.current, g = ghostRef.current;
@@ -472,7 +472,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       setDragArt(null);
       if (!d.moved) return; // tap: the click handler toggles the selection
       const t = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest("[data-bt-target]") as HTMLElement | null;
-      if (t) onTargetRef.current(t.dataset.side as Side, Number(t.dataset.ship));
+      if (t) onTargetRef.current(t.dataset["side"] as Side, Number(t.dataset["ship"]));
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
