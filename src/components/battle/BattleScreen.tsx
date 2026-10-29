@@ -252,21 +252,29 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     const wp = WEAPONS[weapon]!;
     const L = side === "a" ? labRef.current : undefined;
     const mult = L?.dmgX ?? 1;
-    // The enemy captain may slip aside at the last second (spot weapons only).
+    // The enemy captain may slip aside at the last second (spot weapons only) — but a frozen or harpooned ship cannot dodge.
     let spot = T.spot;
-    const dodge = !L && wp.aim === "spot" && rnd() < (def === "b" ? 0.22 : 0.15);
+    const pinned = T.frozen || T.lock > 0;
+    const dodge = !L && wp.aim === "spot" && !pinned && rnd() < (def === "b" ? 0.22 : 0.15);
     let kind: DuelHit["kind"] = "hit";
     let dmg = Math.round(wp.dmg * mult);
+    const tags: string[] = [];
     const tier = T.shield?.tier;
     const forced = L?.outcome && L.outcome !== "auto" ? L.outcome : null;
     if (forced === "miss" || (!forced && dodge && !wp.splash)) { kind = "miss"; dmg = 0; if (dodge) spot = T.spot ? 0 : 1; }
     else if (!forced && dodge && wp.splash) { kind = "splash"; dmg = Math.round(wp.splash * mult); }
+    else if (!forced && wp.type === "kinetic" && T.frozen) { dmg *= 2; tags.push("تحطّم ×2"); }
     if (forced === "blocked" || (!forced && kind !== "miss" && tier && SHIELDS[tier]!.blocks.includes(wp.type))) {
       const t = tier ?? 1;
       const reflect = SHIELDS[t]!.reflect ? { ship, dmg: Math.round(dmg * SHIELDS[t]!.reflect) } : undefined;
-      return { t: "fire", side, ship, weapon, aim: { ship: target, spot: T.spot }, hits: [{ side: def, ship: target, spot: T.spot, kind: "blocked", dmg: 0, tier: t, ...(reflect ? { reflect } : {}) }] };
+      return { t: "fire", side, ship, weapon, aim: { ship: target, spot: T.spot }, hits: [{ side: def, ship: target, spot: T.spot, kind: "blocked", dmg: 0, tier: t, tags, ...(reflect ? { reflect } : {}) }] };
     }
-    return { t: "fire", side, ship, weapon, aim: { ship: target, spot: kind === "miss" ? (T.spot ? 0 : 1) : T.spot }, hits: [{ side: def, ship: target, spot, kind, dmg }] };
+    if (kind !== "miss" && kind !== "blocked") {
+      if (wp.burn) tags.push("حرق");
+      if (wp.freeze) tags.push("تجميد");
+      if (wp.pin) tags.push("تثبيت");
+    }
+    return { t: "fire", side, ship, weapon, aim: { ship: target, spot: kind === "miss" ? (T.spot ? 0 : 1) : T.spot }, hits: [{ side: def, ship: target, spot, kind, dmg, tags }] };
   };
 
   const fire = (ev: DuelFireEvent) => {
