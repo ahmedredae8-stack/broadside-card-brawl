@@ -390,6 +390,29 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [over]);
 
+  // Ember burn: burning ships take their burn pulse on a steady clock (duel.js burns at round start).
+  useEffect(() => {
+    if (over) return;
+    const id = window.setInterval(() => {
+      const s = live.current;
+      (["a", "b"] as Side[]).forEach((side) => s[side].ships.forEach((sh, i) => {
+        if (!sh.alive || sh.burn <= 0 || busy.current[`${side}${i}`]) return;
+        queue.current = queue.current.then(async () => {
+          if (overRef.current || !layer.current) return;
+          if (!live.current[side].ships[i]!.alive || live.current[side].ships[i]!.burn <= 0) return;
+          await playBurnEvent({ t: "burn", side, ship: i, dmg: CFG.burnDamage }, {
+            layer: layer.current,
+            shipCenter,
+            onBurn: (e) => { float(e.side, e.ship, `حرق −${e.dmg}`, "dmg"); damage(e.side, e.ship, e.dmg); },
+          });
+          commitView((n) => { const t = n[side].ships[i]!; if (t.alive) t.burn = Math.max(0, t.burn - 1); });
+          syncAuras();
+        });
+      }));
+    }, 4200);
+    return () => window.clearInterval(id);
+  }, [over]);
+
   const hooks = {
     onShake: (a: number, ms: number) => root.current?.animate([{ transform: `translate(${a}px,${-a / 2}px)` }, { transform: `translate(${-a}px,${a / 2}px)` }, { transform: "translate(0,0)" }], { duration: ms, easing: "ease-out" }),
     onZoom: (s: number, ms: number) => seas.current?.animate([{ transform: "scale(1)" }, { transform: `scale(${s})` }, { transform: "scale(1)" }], { duration: ms, easing: "ease-out" }),
