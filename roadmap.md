@@ -1,0 +1,23 @@
+# Roadmap
+
+- [x] Pull latest code from GitHub + copy files
+- [x] Apply DB schema (players.avatar_url) + bucket game-artwork
+- [x] Enable email auth + auto-confirm (game uses username-only login with synthetic emails)
+- [x] Create admin account (admin / Admin-Bay-2026!)
+- [x] Verify: sign-in, stage, ship menu orbs work
+- [ ] Re-upload missing assets: intro.mp3, night.mp3, click.mp3 (throne-coast.jpg no longer needed — theme removed)
+- [ ] User request: remove Tuscan sunset (throne-coast) background; stage uses animated sea engine with ships sitting inside the water
+- [x] Battle system works end-to-end: profile → هجوم → VS countdown → styled arena, rounds resolve (verified in browser)
+- [ ] Epic battle polish + battle rewards recorded to DB (rounds verified working; scoring not saved yet)
+- [x] "admin 1" granted admin role (login: admin 1 + his password); ship name/price/visibility editing already in admin studio (/admin via settings)
+- [x] Shields: dome art now fills the store cards
+- [x] Ships turn around at sea: DOM flip (already existed) + WebGL engine now mirrors hulls when heading home
+- [x] Settings wired: quality applies on load, vibration pulses, ship-return notification flashes the tab title
+- [x] Messenger fully styled (tabs, inbox, gold bubbles, composer) + «مراسلة» opens the chat with that pirate
+- [x] Dock buttons restyled as flat gold-rimmed buttons with icon-only faces
+- [x] Crew art: thief, guard, fixer-small, fixer-medium painted and wired (store + crew room)
+- [ ] Crew art remaining: fix-l, fix-legend — BLOCKED on Build credits (image generation 402)
+- [x] Animated weapon sprites: 7-weapon pack (fire/frost/harpoon) wired into the arena + status effects (burn ticks, freeze shatter ×2, pin, moveFail shivers) + pointer-drag cards onto ships + painted card art (9 cards)
+- [ ] Admin studio: product image upload not saving/updating
+- [ ] Messages window redesign (strip non-essentials)
+- [ ] Pirate search in dock -> pro profile window (message/attack) -> VS screen + 10s countdown + initiative -> split battle arena with weapons 1-4 + bot when offline

@@ -1,0 +1,146 @@
+[
+ {
+  "id": "winter",
+  "name": "شتاء",
+  "bg": "/seas/winter/bg.jpg",
+  "mask": "/seas/winter/mask.png",
+  "thumb": "/seas/winter/thumb.jpg",
+  "sky": [
+   0.85,
+   0.93,
+   1
+  ],
+  "sun": [
+   0.9,
+   0.95,
+   1
+  ],
+  "foam": 0.25
+ },
+ {
+  "id": "italy",
+  "name": "إيطاليا",
+  "bg": "/seas/italy/bg.jpg",
+  "mask": "/seas/italy/mask.png",
+  "thumb": "/seas/italy/thumb.jpg",
+  "sky": [
+   0.75,
+   0.88,
+   1
+  ],
+  "sun": [
+   1,
+   0.97,
+   0.88
+  ],
+  "foam": 0.7
+ },
+ {
+  "id": "paris",
+  "name": "باريس",
+  "bg": "/seas/paris/bg.jpg",
+  "mask": "/seas/paris/mask.png",
+  "thumb": "/seas/paris/thumb.jpg",
+  "sky": [
+   0.75,
+   0.88,
+   1
+  ],
+  "sun": [
+   1,
+   0.97,
+   0.88
+  ],
+  "foam": 0.7
+ },
+ {
+  "id": "greatwall",
+  "name": "سور الصين",
+  "bg": "/seas/greatwall/bg.jpg",
+  "mask": "/seas/greatwall/mask.png",
+  "thumb": "/seas/greatwall/thumb.jpg",
+  "sky": [
+   0.78,
+   0.86,
+   0.95
+  ],
+  "sun": [
+   1,
+   0.97,
+   0.88
+  ],
+  "foam": 0.7
+ },
+ {
+  "id": "volcano",
+  "name": "بركان",
+  "bg": "/seas/volcano/bg.jpg",
+  "mask": "/seas/volcano/mask.png",
+  "thumb": "/seas/volcano/thumb.jpg",
+  "sky": [
+   1,
+   0.6,
+   0.3
+  ],
+  "sun": [
+   1,
+   0.62,
+   0.28
+  ],
+  "foam": 0.3
+ },
+ {
+  "id": "pyramids",
+  "name": "أهرامات",
+  "bg": "/seas/pyramids/bg.jpg",
+  "mask": "/seas/pyramids/mask.png",
+  "thumb": "/seas/pyramids/thumb.jpg",
+  "sky": [
+   0.8,
+   0.9,
+   1
+  ],
+  "sun": [
+   1,
+   0.97,
+   0.88
+  ],
+  "foam": 0.7
+ },
+ {
+  "id": "alps",
+  "name": "جبال وأزهار",
+  "bg": "/seas/alps/bg.jpg",
+  "mask": "/seas/alps/mask.png",
+  "thumb": "/seas/alps/thumb.jpg",
+  "sky": [
+   0.75,
+   0.88,
+   1
+  ],
+  "sun": [
+   1,
+   0.97,
+   0.88
+  ],
+  "foam": 0.7
+ },
+ {
+  "id": "desert",
+  "name": "صحراء",
+  "bg": "/seas/desert/bg.jpg",
+  "mask": "/seas/desert/mask.png",
+  "thumb": "/seas/desert/thumb.jpg",
+  "sky": [
+   0.75,
+   0.88,
+   1
+  ],
+  "sun": [
+   1,
+   0.97,
+   0.88
+  ],
+  "foam": 0.7
+ }
+]

@@ -1,0 +1,102 @@
+{
+ "viewBox": [
+  -50,
+  0,
+  500,
+  280
+ ],
+ "states": [
+  "idle",
+  "spawn",
+  "hit",
+  "break",
+  "reflect",
+  "off"
+ ],
+ "impact_vars": [
+  "--hx",
+  "--hy"
+ ],
+ "impact_default": [
+  290,
+  105
+ ],
+ "base_center": [
+  200,
+  215
+ ],
+ "dome_width": 340,
+ "shields": [
+  {
+   "tier": 1,
+   "id": "bronze",
+   "name_ar": "درع البرونز",
+   "blocks": [
+    "kinetic"
+   ],
+   "hits": 1,
+   "reflect": 0,
+   "blocks_ultimate": false,
+   "look": "نحاسي دافئ بمسامير على الحافة"
+  },
+  {
+   "tier": 2,
+   "id": "steel",
+   "name_ar": "درع الفولاذ",
+   "blocks": [
+    "kinetic",
+    "fire"
+   ],
+   "hits": 1,
+   "reflect": 0,
+   "blocks_ultimate": false,
+   "look": "أزرق فولاذي بعلامات قياس ومنصات إشعاع جانبية"
+  },
+  {
+   "tier": 3,
+   "id": "emerald",
+   "name_ar": "درع الزمرد",
+   "blocks": [
+    "kinetic",
+    "fire",
+    "ice"
+   ],
+   "hits": 2,
+   "reflect": 0,
+   "blocks_ultimate": false,
+   "look": "أخضر زمردي بأوراق وزخارف ذهبية"
+  },
+  {
+   "tier": 4,
+   "id": "jewel",
+   "name_ar": "درع الجوهرة",
+   "blocks": [
+    "kinetic",
+    "fire",
+    "ice",
+    "pierce"
+   ],
+   "hits": 2,
+   "reflect": 0,
+   "blocks_ultimate": false,
+   "look": "بنفسجي بجناحين وشبكة جواهر وحلقة دوّارة وبرق"
+  },
+  {
+   "tier": 5,
+   "id": "royal",
+   "name_ar": "الدرع الملكي العاكس",
+   "blocks": [
+    "kinetic",
+    "fire",
+    "ice",
+    "pierce",
+    "ultimate_half"
+   ],
+   "hits": 3,
+   "reflect": 0.4,
+   "blocks_ultimate": true,
+   "ultimate_multiplier": 0.5,
+   "look": "ذهبي ملكي بتاج وأجنحة ووجوه بلورية وحلقتين دوّارتين"
+  }
+ ]
+}

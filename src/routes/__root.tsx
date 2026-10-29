@@ -5,8 +5,8 @@ import {
   createRootRouteWithContext,
   useRouter,
   HeadContent,
-  Scripts,
   type ErrorComponentProps,
+  Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -78,11 +78,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "عرش البحار — Throne of Seas" },
+      { name: "description", content: "لعبة قرية الخليج: بحر متحرك وخلفيات عالمية مجانية." },
+      { name: "author", content: "Throne of Seas" },
+      { property: "og:title", content: "عرش البحار — Throne of Seas" },
+      { property: "og:description", content: "لعبة قرية الخليج: بحر متحرك وخلفيات عالمية مجانية." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
@@ -92,7 +92,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Lalezar&family=Baloo+Bhaijaan+2:wght@500;700;800&family=Cairo:wght@500;600;700;800&family=Reem+Kufi:wght@600;700&display=swap" },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/favicon.png" },
+
     ],
   }),
   shellComponent: RootShell,

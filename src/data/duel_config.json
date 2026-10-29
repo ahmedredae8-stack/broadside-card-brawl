@@ -1,0 +1,8 @@
+{
+ "rounds": 10,
+ "decideSeconds": 10,
+ "buildSeconds": 20,
+ "shipHp": 60,
+ "burnDamage": 8,
+ "burnRounds": 3
+}
