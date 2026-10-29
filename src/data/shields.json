@@ -1,0 +1,71 @@
+[
+ {
+  "tier": 1,
+  "name_ar": "درع البرونز",
+  "svg": "assets/shields/shield_1.svg",
+  "blocks": [
+   "kinetic"
+  ],
+  "hits": 1,
+  "reflect": 0,
+  "ultimate_multiplier": 1,
+  "blocks_ultimate": false
+ },
+ {
+  "tier": 2,
+  "name_ar": "درع الفولاذ",
+  "svg": "assets/shields/shield_2.svg",
+  "blocks": [
+   "kinetic",
+   "fire"
+  ],
+  "hits": 1,
+  "reflect": 0,
+  "ultimate_multiplier": 1,
+  "blocks_ultimate": false
+ },
+ {
+  "tier": 3,
+  "name_ar": "درع الزمرد",
+  "svg": "assets/shields/shield_3.svg",
+  "blocks": [
+   "kinetic",
+   "fire",
+   "ice"
+  ],
+  "hits": 2,
+  "reflect": 0,
+  "ultimate_multiplier": 1,
+  "blocks_ultimate": false
+ },
+ {
+  "tier": 4,
+  "name_ar": "درع الجوهرة",
+  "svg": "assets/shields/shield_4.svg",
+  "blocks": [
+   "kinetic",
+   "fire",
+   "ice",
+   "pierce"
+  ],
+  "hits": 2,
+  "reflect": 0,
+  "ultimate_multiplier": 1,
+  "blocks_ultimate": false
+ },
+ {
+  "tier": 5,
+  "name_ar": "الدرع الملكي العاكس",
+  "svg": "assets/shields/shield_5.svg",
+  "blocks": [
+   "kinetic",
+   "fire",
+   "ice",
+   "pierce"
+  ],
+  "hits": 3,
+  "reflect": 0.4,
+  "ultimate_multiplier": 0.5,
+  "blocks_ultimate": true
+ }
+]
