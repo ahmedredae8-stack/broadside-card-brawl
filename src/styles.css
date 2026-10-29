@@ -3159,6 +3159,8 @@
 .bt-target svg { width: 1.8rem; height: 1.8rem; filter: drop-shadow(0 0 6px currentColor); }
 .bt-target-own { border-color: oklch(.8 .14 220); background: oklch(.7 .14 220 / .15); color: oklch(.88 .1 220); }
 .bt-target.hot { border-style: solid; border-color: oklch(.9 .18 85); background: oklch(.75 .18 85 / .3); color: oklch(.95 .15 85); transform: translate(-50%,-50%) scale(1.12); box-shadow: 0 0 22px oklch(.8 .17 75); animation: none; }
+.bt-ghost { position: fixed; z-index: 60; display: none; width: 4.8rem; height: 6.6rem; transform: translate(-50%,-50%); place-items: center; overflow: hidden; border-radius: .6rem; border: 2px solid oklch(.9 .15 85); box-shadow: 0 14px 30px oklch(0 0 0 / .55); pointer-events: none; }
+.bt-ghost img { width: 100%; height: 100%; object-fit: cover; }
 @keyframes bt-aimpulse { 50% { transform: translate(-50%,-50%) scale(1.07); } }
 .bt-deck { position: relative; z-index: 15; padding: .5rem .6rem calc(.6rem + env(safe-area-inset-bottom)); display: grid; gap: .45rem; background: linear-gradient(180deg, oklch(.14 .04 255 / .7), oklch(.08 .03 255)); border-top: 1px solid oklch(.75 .12 80 / .45); }
 .bt-mana { display: flex; align-items: center; gap: .45rem; }

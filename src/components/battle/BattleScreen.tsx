@@ -549,6 +549,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       </div>
       <WeaponsLayer ref={layer} {...hooks} />
       <div className="bt-flash" ref={flash} />
+      <div className="bt-ghost" ref={ghostRef} aria-hidden="true">{dragArt && <img src={dragArt} alt="" draggable={false} />}</div>
       {banner && <strong className="bt-shout" key={banner.id}>{banner.text}</strong>}
 
       {!over && (
