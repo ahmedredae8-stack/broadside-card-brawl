@@ -25,7 +25,7 @@ export type DuelEvent =
   | { t: "end"; winner: Side | "draw" };
 export type SetupSide = { ships: { weapons: string[]; spot: number }[]; shields: number[] };
 export const CFG: { rounds: number; decideSeconds: number; buildSeconds: number; shipHp: number; burnDamage: number; burnRounds: number };
-export const WEAPONS: Record<string, { name: string; type: string; dmg: number; cd: number; aim: "spot" | "ship" | "all"; splash?: number }>;
+export const WEAPONS: Record<string, { name: string; type: string; dmg: number; cd: number; aim: "spot" | "ship" | "all"; splash?: number; burn?: boolean; freeze?: boolean; pin?: boolean }>;
 export const SHIELDS: Record<number, { name: string; blocks: string[]; hits: number; reflect: number; ultimateHalf?: boolean }>;
 export function newState(cfg: { first: Side; a: SetupSide; b: SetupSide }): DuelState;
 export function attackerOf(s: DuelState): Side;

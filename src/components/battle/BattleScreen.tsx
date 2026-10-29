@@ -242,8 +242,12 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
 
   const damage = (side: Side, ship: number, dmg: number) => {
     let died = false;
-    commitView((n) => { const s = n[side].ships[ship]!; if (!s.alive) return; s.hp = Math.max(0, s.hp - dmg); if (s.hp === 0) { s.alive = false; s.shield = null; died = true; } });
-    if (died) { float(side, ship, "غرقت!", "crit"); deathCam(side, ship); checkEnd(); }
+    commitView((n) => { const s = n[side].ships[ship]!; if (!s.alive) return; s.hp = Math.max(0, s.hp - dmg); if (s.hp === 0) { s.alive = false; s.shield = null; s.burn = 0; s.frozen = false; s.lock = 0; died = true; } });
+    if (died) {
+      // Sudfires die with their ship: flames out, ice melts, harpoon drops.
+      if (layer.current) playDeadFlames(side, ship, layer.current);
+      float(side, ship, "غرقت!", "crit"); deathCam(side, ship); checkEnd();
+    }
   };
 
   /** Build a duel fire event from current positions (same numbers as duel.js), honouring lab overrides. */
