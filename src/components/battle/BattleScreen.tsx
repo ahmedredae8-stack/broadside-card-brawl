@@ -433,6 +433,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
 
   const onTarget = (side: Side, i: number) => {
     if (!card) return;
+    setDropHot(null);
     if (play("a", card, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
     else playSfx("hover", 0.4);
   };
