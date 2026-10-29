@@ -17,7 +17,7 @@
 - [x] Dock buttons restyled as flat gold-rimmed buttons with icon-only faces
 - [x] Crew art: thief, guard, fixer-small, fixer-medium painted and wired (store + crew room)
 - [ ] Crew art remaining: fix-l, fix-legend — BLOCKED on Build credits (image generation 402)
-- [ ] Animated weapon sprites in battle (half done by user; rest coming later)
+- [x] Animated weapon sprites: 7-weapon pack (fire/frost/harpoon) wired into the arena + status effects (burn ticks, freeze shatter ×2, pin, moveFail shivers) + pointer-drag cards onto ships + painted card art (9 cards)
 - [ ] Admin studio: product image upload not saving/updating
 - [ ] Messages window redesign (strip non-essentials)
 - [ ] Pirate search in dock -> pro profile window (message/attack) -> VS screen + 10s countdown + initiative -> split battle arena with weapons 1-4 + bot when offline

@@ -17,3 +17,5 @@
 - Broadcast artwork updates and renew signed image URLs; mounted sea and store views must not retain stale art.
 - Use Nitro’s Vercel preset for external deployment; the Lovable harness retains its own managed target.
 - Scope social windows to the fixed stage and shared HUD tokens; viewport-sized children must not overflow embedded windows.
+- Battle arena resolves its own real-time card events; keep `src/game/duel.js` byte-identical to the weapon pack, and wire weapon FX only through `playFireEvent`/`syncIce`/`syncPin` with a `shipCenter` ctx — never edit `*Fx.js`.
+- Battle cards drag by pointer events (touch + mouse) onto `data-bt-target` ships; HTML5 DnD is not used because it does not work on touch.
