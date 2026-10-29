@@ -269,7 +269,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     if (forced === "miss" || (!forced && dodge && !wp.splash)) { kind = "miss"; dmg = 0; if (dodge) spot = T.spot ? 0 : 1; }
     else if (!forced && dodge && wp.splash) { kind = "splash"; dmg = Math.round(wp.splash * mult); }
     else if (!forced && wp.type === "kinetic" && T.frozen) { dmg *= 2; tags.push("تحطّم ×2"); }
-    if (forced === "blocked" || (!forced && kind !== "miss" && tier && SHIELDS[tier]!.blocks.includes(wp.type))) {
+    if (forced === "blocked" || (!forced && (kind === "hit" || kind === "splash") && tier && SHIELDS[tier]!.blocks.includes(wp.type))) {
       const t = tier ?? 1;
       const reflect = SHIELDS[t]!.reflect ? { ship, dmg: Math.round(dmg * SHIELDS[t]!.reflect) } : undefined;
       return { t: "fire", side, ship, weapon, aim: { ship: target, spot: T.spot }, hits: [{ side: def, ship: target, spot: T.spot, kind: "blocked", dmg: 0, tier: t, tags, ...(reflect ? { reflect } : {}) }] };

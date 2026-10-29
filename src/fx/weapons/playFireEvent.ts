@@ -46,7 +46,12 @@ export async function playFireEvent(ev: DuelFireEvent, ctx: PlayCtx): Promise<vo
   const fromTrack = W === "harpoon" ? () => ctx.launchPoint(ev.side, ev.ship, "muzzle") : undefined;
   const shatterKey = main && main.tags?.includes("تحطّم ×2") ? burnKey(main.side, main.ship) : null;
   await ctx.layer.fire({
-    weapon: W, from, to, outcome, shieldColor, burn, freeze, pin, fromTrack,
+    weapon: W, from, to, outcome,
+    ...(shieldColor !== undefined ? { shieldColor } : {}),
+    ...(burn ? { burn } : {}),
+    ...(freeze ? { freeze } : {}),
+    ...(pin ? { pin } : {}),
+    ...(fromTrack ? { fromTrack } : {}),
     onImpact: () => { if (shatterKey && W !== "missile") ctx.layer.shatter(shatterKey); ctx.onImpact?.(ev); },
     onMissileImpact: (i) => { if (shatterKey && i === 0) ctx.layer.shatter(shatterKey); ctx.onMissileImpact?.(i, ev); },
   });
@@ -79,7 +84,7 @@ export function syncIce(
 ) {
   (["a", "b"] as Side[]).forEach((side) => state[side].ships.forEach((s, i) => {
     const key = burnKey(side, i), live = ctx.layer.frozen().includes(key);
-    if (s.alive && s.frozen && !live) ctx.layer.freeze(key, { instant: true, track: ctx.shipCenter ? () => ctx.shipCenter!(side, i) : undefined });
+    if (s.alive && s.frozen && !live) ctx.layer.freeze(key, { instant: true, ...(ctx.shipCenter ? { track: () => ctx.shipCenter!(side, i) } : {}) });
     else if (!(s.alive && s.frozen) && live) ctx.layer.thaw(key, s.alive ? "melt" : "dead");
   }));
 }
@@ -92,7 +97,7 @@ export function syncPin(
 ) {
   (["a", "b"] as Side[]).forEach((side) => state[side].ships.forEach((s, i) => {
     const key = burnKey(side, i), live = ctx.layer.pinned().includes(key), want = s.alive && s.lock > 0 && !s.frozen;
-    if (want && !live) ctx.layer.pin(key, { instant: true, track: ctx.shipCenter ? () => ctx.shipCenter!(side, i) : undefined, fromTrack: () => ctx.launchPoint(other(side), 0, "muzzle") });
+    if (want && !live) ctx.layer.pin(key, { instant: true, ...(ctx.shipCenter ? { track: () => ctx.shipCenter!(side, i) } : {}), fromTrack: () => ctx.launchPoint(other(side), 0, "muzzle") });
     else if (!want && live) ctx.layer.unpin(key, s.alive ? "free" : "dead");
   }));
 }
