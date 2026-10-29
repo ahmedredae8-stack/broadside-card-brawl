@@ -527,9 +527,19 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
               const outOfShields = isShield && !lab && shieldsLeft.current.a <= 0;
               const ready = mana.a >= c.cost && !noShip && !outOfShields;
               return (
-                <button key={c.id} type="button" className={`bt-card bt-card-${c.id}${card === c.id ? " on" : ""}${ready ? " ready" : ""}`} disabled={noShip || outOfShields} onClick={() => { setCard(card === c.id ? null : c.id); playSfx("click", 0.5); }} aria-pressed={card === c.id}>
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`bt-card bt-card-${c.id}${card === c.id ? " on" : ""}${ready ? " ready" : ""}`}
+                  disabled={noShip || outOfShields}
+                  draggable={ready}
+                  onClick={() => { setCard(card === c.id ? null : c.id); playSfx("click", 0.5); }}
+                  onDragStart={(e) => { if (!ready) { e.preventDefault(); return; } setCard(c.id); e.dataTransfer.setData("text/plain", c.id); e.dataTransfer.effectAllowed = "copy"; }}
+                  onDragEnd={() => setDropHot(null)}
+                  aria-pressed={card === c.id}
+                >
                   <span className="bt-card-cost">{c.cost}</span>
-                  <span className="bt-card-art" aria-hidden="true">{c.icon}</span>
+                  <span className="bt-card-art" aria-hidden="true"><img src={c.art} alt="" width={1024} height={1024} loading="lazy" draggable={false} /></span>
                   <strong>{c.name}</strong>
                   <small>{outOfShields ? "نفدت" : c.note}</small>
                   {!ready && !noShip && !outOfShields && <i className="bt-card-fill" style={{ height: `${100 - Math.min(100, (mana.a / c.cost) * 100)}%` }} />}
