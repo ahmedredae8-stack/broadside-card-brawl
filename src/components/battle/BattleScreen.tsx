@@ -274,7 +274,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       const reflect = SHIELDS[t]!.reflect ? { ship, dmg: Math.round(dmg * SHIELDS[t]!.reflect) } : undefined;
       return { t: "fire", side, ship, weapon, aim: { ship: target, spot: T.spot }, hits: [{ side: def, ship: target, spot: T.spot, kind: "blocked", dmg: 0, tier: t, tags, ...(reflect ? { reflect } : {}) }] };
     }
-    if (kind !== "miss" && kind !== "blocked") {
+    if (kind === "hit" || kind === "splash") {
       if (wp.burn) tags.push("حرق");
       if (wp.freeze) tags.push("تجميد");
       if (wp.pin) tags.push("تثبيت");
