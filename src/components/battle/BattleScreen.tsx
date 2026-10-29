@@ -139,6 +139,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
   const manaRef = useRef({ a: 4, b: 4 });
   const [left, setLeft] = useState(MATCH_SECONDS);
   const [card, setCard] = useState<CardId | null>(null);
+  const [dropHot, setDropHot] = useState<string | null>(null);
   const [over, setOver] = useState<Side | "draw" | null>(null);
   const [floats, setFloats] = useState<Float[]>([]);
   const [shieldFx, setShieldFx] = useState<ShieldFx>({});
