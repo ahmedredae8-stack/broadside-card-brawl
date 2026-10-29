@@ -499,7 +499,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
           <span className="bt-tag">{foe.name} <Bot className="h-3 w-3" /> <em>⚡{Math.floor(mana.b)}</em></span>
         </div>
         <div className="bt-divider">
-          <span className="bt-turn me">{over ? "انتهت المعركة" : card ? (isShieldCard ? "اختر سفينتك لتدريعها" : "اضغط سفينة العدو!") : "اختر بطاقة"}</span>
+          <span className="bt-turn me">{over ? "انتهت المعركة" : card ? (isShieldCard ? "اسحب الدرع على سفينتك" : "اسحب البطاقة على سفينة العدو!") : "اسحب بطاقة أو اخترها"}</span>
         </div>
         <div className="bt-panel bt-panel-me" ref={bottomBox}>
           <BattleSea ref={bottom} theme={myWorld} ships={view.a.ships} hull={hull} stormy>{overlay("a")}</BattleSea>
