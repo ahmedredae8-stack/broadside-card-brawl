@@ -382,7 +382,10 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       if (hurt && m >= 3 && shieldsLeft.current.b > 0 && rnd() < 0.5) { play("b", m >= 6 && rnd() < 0.4 ? "royal" : "shield", hurt.i); return; }
       const weak = [...foes].sort((p, q) => p.x.hp - q.x.hp)[0]!;
       const shielded = !!weak.x.shield;
-      const order: CardId[] = shielded ? ["torpedo", "missile", "cannon"] : m >= 8 ? ["torpedo", "mortar", "missile", "cannon"] : ["mortar", "missile", "cannon"];
+      const order: CardId[] = shielded
+        ? ["torpedo", "missile", "cannon", "harpoon"]
+        : m >= 8 ? ["torpedo", "mortar", "missile", "cannon", "frost_shell", "fire_barrel", "harpoon"]
+        : ["mortar", "missile", "cannon", "fire_barrel", "frost_shell", "harpoon"];
       if (rnd() < 0.35) return; // breathe: saves energy for heavier cards
       for (const c of order) if (m >= cardCost(c) && gunner("b", c) >= 0) { play("b", c, weak.i); return; }
     }, 900);
