@@ -1,10 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Crosshair, Shield, Swords, X, Zap } from "lucide-react";
 
+import cannonArt from "@/assets/cards/cannon.jpg";
+import mortarArt from "@/assets/cards/mortar.jpg";
+import missileArt from "@/assets/cards/missile.jpg";
+import torpedoArt from "@/assets/cards/torpedo.jpg";
+import fireBarrelArt from "@/assets/cards/fire_barrel.jpg";
+import frostShellArt from "@/assets/cards/frost_shell.jpg";
+import harpoonArt from "@/assets/cards/harpoon.jpg";
+import shieldArt from "@/assets/cards/shield.jpg";
+import royalArt from "@/assets/cards/royal.jpg";
+
 import { CaptainAvatar } from "@/components/GameSprite";
 import ShieldOverlay, { type ShieldState } from "@/shields/ShieldOverlay";
 import WeaponsLayer, { type WeaponsApi } from "@/fx/weapons/WeaponsLayer";
-import { playFireEvent, type DuelFireEvent, type DuelHit, type PlayCtx } from "@/fx/weapons/playFireEvent";
+import {
+  playFireEvent,
+  playBurnEvent,
+  playDeadFlames,
+  playMoveFail,
+  syncIce,
+  syncPin,
+  type DuelFireEvent,
+  type DuelHit,
+  type PlayCtx,
+} from "@/fx/weapons/playFireEvent";
 import { BattleSea, type BattleSeaApi } from "@/components/battle/BattleSea";
 import { CFG, SHIELDS, WEAPONS, mulberry, newState, type DuelState, type Side } from "@/game/duel";
 import { fleetCatalog } from "@/lib/fleetCatalog";
@@ -15,9 +35,9 @@ import type { Player } from "@/lib/player";
 /** Standard war loadout until owned weapons are recorded per ship. Same for both captains: fair duels. */
 export const LOADOUT = {
   ships: [
-    { weapons: ["cannon", "mortar"], spot: 0 },
-    { weapons: ["cannon", "missile"], spot: 1 },
-    { weapons: ["cannon", "torpedo"], spot: 0 },
+    { weapons: ["cannon", "mortar", "fire_barrel"], spot: 0 },
+    { weapons: ["cannon", "missile", "harpoon"], spot: 1 },
+    { weapons: ["cannon", "torpedo", "frost_shell"], spot: 0 },
   ],
   shields: [1, 2, 3],
 };
@@ -29,14 +49,17 @@ export const MANA_MAX = 10;
 export const MATCH_SECONDS = 120;
 export const OVERTIME_AT = 30; // last 30s: energy flows twice as fast
 export const MANA_PER_SEC = 0.75;
-export type CardId = "cannon" | "missile" | "mortar" | "torpedo" | "shield" | "royal";
-export const CARDS: { id: CardId; cost: number; name: string; icon: string; note: string }[] = [
-  { id: "cannon", cost: 2, name: "المدفع", icon: "💣", note: `ضرر ${WEAPONS["cannon"]!.dmg}` },
-  { id: "missile", cost: 3, name: "الصواريخ", icon: "🚀", note: "تتبع الهدف" },
-  { id: "mortar", cost: 4, name: "الهاون", icon: "💥", note: `ضرر ${WEAPONS["mortar"]!.dmg} + شظايا` },
-  { id: "torpedo", cost: 5, name: "الطوربيد", icon: "🔱", note: "يخترق الدروع" },
-  { id: "shield", cost: 3, name: SHIELDS[2]!.name, icon: "🛡️", note: "يصد ضربة" },
-  { id: "royal", cost: 6, name: "الدرع الملكي", icon: "👑", note: "يعكس الضرر" },
+export type CardId = "cannon" | "missile" | "mortar" | "torpedo" | "fire_barrel" | "frost_shell" | "harpoon" | "shield" | "royal";
+export const CARDS: { id: CardId; cost: number; name: string; art: string; note: string }[] = [
+  { id: "cannon", cost: 2, name: "المدفع", art: cannonArt, note: `ضرر ${WEAPONS["cannon"]!.dmg}` },
+  { id: "missile", cost: 3, name: "الصواريخ", art: missileArt, note: "تتبع الهدف" },
+  { id: "mortar", cost: 4, name: "الهاون", art: mortarArt, note: `ضرر ${WEAPONS["mortar"]!.dmg} + شظايا` },
+  { id: "torpedo", cost: 5, name: "الطوربيد", art: torpedoArt, note: "يخترق الدروع" },
+  { id: "fire_barrel", cost: 4, name: "الجمرة", art: fireBarrelArt, note: "حرق 8 لثلاث جولات" },
+  { id: "frost_shell", cost: 4, name: "الصقيع", art: frostShellArt, note: "تجميد وضربة حركية ×2" },
+  { id: "harpoon", cost: 3, name: "الحربة", art: harpoonArt, note: "تثبيت: لا تفلت من الضربة" },
+  { id: "shield", cost: 3, name: SHIELDS[2]!.name, art: shieldArt, note: "يصد ضربة" },
+  { id: "royal", cost: 6, name: "الدرع الملكي", art: royalArt, note: "يعكس الضرر" },
 ];
 export const cardCost = (id: CardId) => CARDS.find((c) => c.id === id)!.cost;
 export const manaRate = (secondsLeft: number) => MANA_PER_SEC * (secondsLeft <= OVERTIME_AT ? 2 : 1);
