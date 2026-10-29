@@ -466,7 +466,17 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
           <span key={f.id} className={`bt-float bt-float-${f.tone}`} style={{ left: p.x, top: p.y }}>{f.text}</span>
         ))}
         {targetable && (
-          <button type="button" className={isShieldCard ? "bt-target bt-target-own" : "bt-target"} style={{ left: c.x, top: c.y, width: hs.w * 1.1, height: hs.h * 1.4 }} onClick={() => onTarget(side, i)} aria-label={isShieldCard ? `درّع سفينتك ${i + 1}` : `اضرب سفينة العدو ${i + 1}`}>
+          <button
+            type="button"
+            className={`${isShieldCard ? "bt-target bt-target-own" : "bt-target"}${dropHot === `${side}${i}` ? " hot" : ""}`}
+            style={{ left: c.x, top: c.y, width: hs.w * 1.1, height: hs.h * 1.4 }}
+            onClick={() => onTarget(side, i)}
+            onDragOver={(e) => { if (card) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } }}
+            onDragEnter={() => { if (card) setDropHot(`${side}${i}`); }}
+            onDragLeave={() => setDropHot((h) => (h === `${side}${i}` ? null : h))}
+            onDrop={(e) => { e.preventDefault(); onTarget(side, i); }}
+            aria-label={isShieldCard ? `درّع سفينتك ${i + 1}` : `اضرب سفينة العدو ${i + 1}`}
+          >
             {isShieldCard ? <Shield /> : <Crosshair />}
           </button>
         )}
