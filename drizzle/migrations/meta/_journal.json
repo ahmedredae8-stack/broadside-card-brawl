@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792415945709,
+      "tag": "0000_import_sea_tales_schema_v3",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792582213186,
+      "tag": "0001_add_players_avatar_url",
+      "breakpoints": true
+    }
+  ]
+}

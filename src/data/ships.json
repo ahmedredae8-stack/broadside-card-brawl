@@ -1,0 +1,398 @@
+{
+ "rarity_order_ar": [
+  "شائع",
+  "غير شائع",
+  "نادر",
+  "ملحمي",
+  "أسطوري"
+ ],
+ "note": "مدد الصيد وأنواع السمك مقترحة وقابلة للتعديل",
+ "ships": [
+  {
+   "id": "S01",
+   "name_ar": "زورق الصياد الأول",
+   "file": "ships/S01_rowboat.jpg",
+   "tier": 0,
+   "class": "fisher",
+   "class_ar": "صياد (تمهيد)",
+   "weapons": [
+    "harpoon"
+   ],
+   "weapon_slots": 1,
+   "shield_max": 0,
+   "fishing": {
+    "trip_minutes": 60,
+    "fish": [
+     {
+      "name_ar": "سردين",
+      "rarity_ar": "شائع"
+     },
+     {
+      "name_ar": "أنشوجة",
+      "rarity_ar": "شائع"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S02",
+   "name_ar": "قارب الصياد المطوّر",
+   "file": "ships/S02_fishing_boat.jpg",
+   "tier": 0,
+   "class": "fisher",
+   "class_ar": "صياد (تمهيد)",
+   "weapons": [
+    "harpoon",
+    "cannon"
+   ],
+   "weapon_slots": 1,
+   "shield_max": 0,
+   "fishing": {
+    "trip_minutes": 50,
+    "fish": [
+     {
+      "name_ar": "سردين",
+      "rarity_ar": "شائع"
+     },
+     {
+      "name_ar": "بوري",
+      "rarity_ar": "شائع"
+     },
+     {
+      "name_ar": "ماكريل",
+      "rarity_ar": "غير شائع"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S03",
+   "name_ar": "الحاجز الخشبي",
+   "file": "ships/S03_wooden_tank.jpg",
+   "tier": 1,
+   "class": "tank",
+   "class_ar": "حاجز",
+   "weapons": [
+    "cannon"
+   ],
+   "weapon_slots": 1,
+   "shield_max": 1,
+   "fishing": {
+    "trip_minutes": 45,
+    "fish": [
+     {
+      "name_ar": "ماكريل",
+      "rarity_ar": "غير شائع"
+     },
+     {
+      "name_ar": "دنيس",
+      "rarity_ar": "غير شائع"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S04",
+   "name_ar": "المدفعي الصغير",
+   "file": "ships/S04_small_gunner.jpg",
+   "tier": 1,
+   "class": "artillery",
+   "class_ar": "مدفعي",
+   "weapons": [
+    "mortar"
+   ],
+   "weapon_slots": 1,
+   "shield_max": 1,
+   "fishing": {
+    "trip_minutes": 45,
+    "fish": [
+     {
+      "name_ar": "دنيس",
+      "rarity_ar": "غير شائع"
+     },
+     {
+      "name_ar": "قاروس",
+      "rarity_ar": "غير شائع"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S05",
+   "name_ar": "سفينة الجمر",
+   "file": "ships/S05_ember_ship.jpg",
+   "tier": 2,
+   "class": "fire",
+   "class_ar": "حارق",
+   "weapons": [
+    "fire_barrel",
+    "cannon"
+   ],
+   "weapon_slots": 2,
+   "shield_max": 2,
+   "fishing": {
+    "trip_minutes": 40,
+    "fish": [
+     {
+      "name_ar": "تونة",
+      "rarity_ar": "نادر"
+     },
+     {
+      "name_ar": "سمكة الجمر المتوهجة",
+      "rarity_ar": "نادر"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S06",
+   "name_ar": "سفينة الصقيع",
+   "file": "ships/S06_frost_ship.jpg",
+   "tier": 3,
+   "class": "control",
+   "class_ar": "متحكم",
+   "weapons": [
+    "frost_shell",
+    "harpoon"
+   ],
+   "weapon_slots": 2,
+   "shield_max": 3,
+   "fishing": {
+    "trip_minutes": 35,
+    "fish": [
+     {
+      "name_ar": "سلمون",
+      "rarity_ar": "نادر"
+     },
+     {
+      "name_ar": "قد قطبي",
+      "rarity_ar": "نادر"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S07",
+   "name_ar": "الغواصة الصدفية",
+   "file": "ships/S07_shell_sub.jpg",
+   "tier": 3,
+   "class": "sub",
+   "class_ar": "غواصة",
+   "weapons": [
+    "torpedo"
+   ],
+   "weapon_slots": 2,
+   "shield_max": 3,
+   "fishing": {
+    "trip_minutes": 35,
+    "fish": [
+     {
+      "name_ar": "أبو شص (سمكة الأعماق)",
+      "rarity_ar": "نادر"
+     },
+     {
+      "name_ar": "حبّار",
+      "rarity_ar": "نادر"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S08",
+   "name_ar": "سفينة الإمداد",
+   "file": "ships/S08_supply_ship.jpg",
+   "tier": 3,
+   "class": "support",
+   "class_ar": "دعم",
+   "weapons": [],
+   "weapon_slots": 0,
+   "shield_max": 3,
+   "fishing": {
+    "trip_minutes": 30,
+    "fish": [
+     {
+      "name_ar": "سردين",
+      "rarity_ar": "شائع"
+     },
+     {
+      "name_ar": "ماكريل",
+      "rarity_ar": "غير شائع"
+     },
+     {
+      "name_ar": "دنيس",
+      "rarity_ar": "غير شائع"
+     },
+     {
+      "name_ar": "تونة",
+      "rarity_ar": "نادر"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S09",
+   "name_ar": "الجاليون الحارس",
+   "file": "ships/S09_guardian_galleon.jpg",
+   "tier": 4,
+   "class": "tank",
+   "class_ar": "حاجز",
+   "weapons": [
+    "cannon",
+    "missile"
+   ],
+   "weapon_slots": 3,
+   "shield_max": 4,
+   "fishing": {
+    "trip_minutes": 30,
+    "fish": [
+     {
+      "name_ar": "تونة",
+      "rarity_ar": "نادر"
+     },
+     {
+      "name_ar": "سمك السيف",
+      "rarity_ar": "ملحمي"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S10",
+   "name_ar": "الجاليون القاذف",
+   "file": "ships/S10_launcher_galleon.jpg",
+   "tier": 4,
+   "class": "artillery",
+   "class_ar": "مدفعي",
+   "weapons": [
+    "mortar",
+    "missile"
+   ],
+   "weapon_slots": 3,
+   "shield_max": 4,
+   "fishing": {
+    "trip_minutes": 30,
+    "fish": [
+     {
+      "name_ar": "سمك السيف",
+      "rarity_ar": "ملحمي"
+     },
+     {
+      "name_ar": "قرش صغير",
+      "rarity_ar": "ملحمي"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S11",
+   "name_ar": "سفينة الجليد الملكية",
+   "file": "ships/S11_royal_ice.jpg",
+   "tier": 5,
+   "class": "control",
+   "class_ar": "متحكم",
+   "weapons": [
+    "frost_shell",
+    "harpoon",
+    "missile"
+   ],
+   "weapon_slots": 3,
+   "shield_max": 5,
+   "fishing": {
+    "trip_minutes": 25,
+    "fish": [
+     {
+      "name_ar": "سلمون ملكي",
+      "rarity_ar": "نادر"
+     },
+     {
+      "name_ar": "سمكة الجليد الكريستالية",
+      "rarity_ar": "ملحمي"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S12",
+   "name_ar": "سفينة اللهب الملكية",
+   "file": "ships/S12_royal_flame.jpg",
+   "tier": 5,
+   "class": "fire",
+   "class_ar": "حارق",
+   "weapons": [
+    "fire_barrel",
+    "mortar",
+    "missile"
+   ],
+   "weapon_slots": 3,
+   "shield_max": 5,
+   "fishing": {
+    "trip_minutes": 25,
+    "fish": [
+     {
+      "name_ar": "سمك اللهب الملكي",
+      "rarity_ar": "ملحمي"
+     },
+     {
+      "name_ar": "سمك السيف",
+      "rarity_ar": "ملحمي"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S13",
+   "name_ar": "الغواصة الذهبية",
+   "file": "ships/S13_golden_sub.jpg",
+   "tier": 5,
+   "class": "sub",
+   "class_ar": "غواصة",
+   "weapons": [
+    "torpedo",
+    "missile"
+   ],
+   "weapon_slots": 3,
+   "shield_max": 5,
+   "fishing": {
+    "trip_minutes": 25,
+    "fish": [
+     {
+      "name_ar": "حبّار عملاق",
+      "rarity_ar": "ملحمي"
+     },
+     {
+      "name_ar": "محار اللؤلؤ",
+      "rarity_ar": "ملحمي"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S14",
+   "name_ar": "القائد الذهبي",
+   "file": "ships/S14_golden_flagship.jpg",
+   "tier": 5,
+   "class": "flagship",
+   "class_ar": "سفينة القيادة",
+   "weapons": [
+    "cannon",
+    "missile",
+    "sun"
+   ],
+   "weapon_slots": 3,
+   "shield_max": 5,
+   "fishing": {
+    "trip_minutes": 20,
+    "fish": [
+     {
+      "name_ar": "سمكة الشمس الذهبية",
+      "rarity_ar": "أسطوري"
+     },
+     {
+      "name_ar": "القرش الأزرق",
+      "rarity_ar": "ملحمي"
+     }
+    ]
+   }
+  }
+ ]
+}

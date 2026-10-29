@@ -1,0 +1,13 @@
+{
+  "note": "الأسلحة الأربعة الأولى جاهزة (available:true). الأربعة الباقية ستصل قريبًا، سلاحًا بعد سلاح. الأرقام مطابقة لـ duel.js.",
+  "weapons": [
+    { "id": "cannon", "name_ar": "المدفع", "available": true, "damage_type": "kinetic", "damage": 30, "cooldown": 0, "aim": "spot", "launch_point": "muzzle", "target_point": "spot_center", "outcomes": ["hit", "miss", "blocked"], "fx_seconds": 1.5, "file": "src/fx/weapons/cannonFx.js", "doc": "docs/cannon.md" },
+    { "id": "mortar", "name_ar": "الهاون", "available": true, "damage_type": "kinetic", "damage": 36, "splash_damage": 18, "cooldown": 1, "aim": "spot", "launch_point": "muzzle", "target_point": "spot_center", "outcomes": ["hit", "splash", "miss", "blocked"], "fx_seconds": 2.4, "file": "src/fx/weapons/mortarFx.js", "doc": "docs/mortar.md" },
+    { "id": "missile", "name_ar": "الصواريخ", "available": true, "damage_type": "kinetic", "damage": 30, "salvo": 3, "cooldown": 1, "aim": "ship", "launch_point": "muzzle", "target_point": "ship_current_spot", "outcomes": ["hit", "blocked", "miss"], "fx_seconds": 2.4, "file": "src/fx/weapons/missileFx.js", "doc": "docs/missiles.md" },
+    { "id": "torpedo", "name_ar": "الطوربيد", "available": true, "damage_type": "pierce", "damage": 40, "cooldown": 1, "aim": "spot", "launch_point": "waterline", "target_point": "spot_center", "outcomes": ["hit", "miss", "blocked"], "fx_seconds": 2.6, "file": "src/fx/weapons/torpedoFx.js", "doc": "docs/torpedo.md" },
+    { "id": "fire_barrel", "name_ar": "الجمرة", "available": false, "coming_soon": true, "damage_type": "fire", "damage": 15, "cooldown": 1, "aim": "spot", "effect_ar": "حرق 8 في بداية كل جولة لثلاث جولات" },
+    { "id": "frost_shell", "name_ar": "الصقيع", "available": false, "coming_soon": true, "damage_type": "ice", "damage": 10, "cooldown": 1, "aim": "spot", "effect_ar": "تجميد: لا تتحرك في دفاعها القادم، وأول ضربة حركية عليها ×2" },
+    { "id": "harpoon", "name_ar": "الحربة", "available": false, "coming_soon": true, "damage_type": "pierce", "damage": 10, "cooldown": 2, "aim": "spot", "effect_ar": "تثبيت: لا تتحرك في دفاعها القادم" },
+    { "id": "sun", "name_ar": "شمس الليل", "available": false, "coming_soon": true, "damage_type": "ultimate", "damage": 40, "once_per_battle": true, "aim": "all", "effect_ar": "تصيب كل سفن الخصم وتخترق الدروع 1 إلى 4" }
+  ]
+}

@@ -10,33 +10,193 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ChatRouteImport } from './routes/chat'
+import { Route as FishMarketRouteImport } from './routes/fish-market'
+import { Route as FriendsRouteImport } from './routes/friends'
+import { Route as SeaStudioRouteImport } from './routes/sea-studio'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ShieldsTestRouteImport } from './routes/shields-test'
+import { Route as ShipyardRouteImport } from './routes/shipyard'
+import { Route as TribesRouteImport } from './routes/tribes'
+import { Route as AdminBattleRouteImport } from './routes/admin_.battle'
+import { Route as VillageIdRouteImport } from './routes/village.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FishMarketRoute = FishMarketRouteImport.update({
+  id: '/fish-market',
+  path: '/fish-market',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FriendsRoute = FriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SeaStudioRoute = SeaStudioRouteImport.update({
+  id: '/sea-studio',
+  path: '/sea-studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShieldsTestRoute = ShieldsTestRouteImport.update({
+  id: '/shields-test',
+  path: '/shields-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShipyardRoute = ShipyardRouteImport.update({
+  id: '/shipyard',
+  path: '/shipyard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TribesRoute = TribesRouteImport.update({
+  id: '/tribes',
+  path: '/tribes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBattleRoute = AdminBattleRouteImport.update({
+  id: '/admin_/battle',
+  path: '/admin/battle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VillageIdRoute = VillageIdRouteImport.update({
+  id: '/village/$id',
+  path: '/village/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
+  '/chat': typeof ChatRoute
+  '/fish-market': typeof FishMarketRoute
+  '/friends': typeof FriendsRoute
+  '/sea-studio': typeof SeaStudioRoute
+  '/settings': typeof SettingsRoute
+  '/shields-test': typeof ShieldsTestRoute
+  '/shipyard': typeof ShipyardRoute
+  '/tribes': typeof TribesRoute
+  '/admin/battle': typeof AdminBattleRoute
+  '/village/$id': typeof VillageIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
+  '/chat': typeof ChatRoute
+  '/fish-market': typeof FishMarketRoute
+  '/friends': typeof FriendsRoute
+  '/sea-studio': typeof SeaStudioRoute
+  '/settings': typeof SettingsRoute
+  '/shields-test': typeof ShieldsTestRoute
+  '/shipyard': typeof ShipyardRoute
+  '/tribes': typeof TribesRoute
+  '/admin/battle': typeof AdminBattleRoute
+  '/village/$id': typeof VillageIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
+  '/chat': typeof ChatRoute
+  '/fish-market': typeof FishMarketRoute
+  '/friends': typeof FriendsRoute
+  '/sea-studio': typeof SeaStudioRoute
+  '/settings': typeof SettingsRoute
+  '/shields-test': typeof ShieldsTestRoute
+  '/shipyard': typeof ShipyardRoute
+  '/tribes': typeof TribesRoute
+  '/admin_/battle': typeof AdminBattleRoute
+  '/village/$id': typeof VillageIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/chat'
+    | '/fish-market'
+    | '/friends'
+    | '/sea-studio'
+    | '/settings'
+    | '/shields-test'
+    | '/shipyard'
+    | '/tribes'
+    | '/admin/battle'
+    | '/village/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/chat'
+    | '/fish-market'
+    | '/friends'
+    | '/sea-studio'
+    | '/settings'
+    | '/shields-test'
+    | '/shipyard'
+    | '/tribes'
+    | '/admin/battle'
+    | '/village/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/chat'
+    | '/fish-market'
+    | '/friends'
+    | '/sea-studio'
+    | '/settings'
+    | '/shields-test'
+    | '/shipyard'
+    | '/tribes'
+    | '/admin_/battle'
+    | '/village/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AuthRoute: typeof AuthRoute
+  ChatRoute: typeof ChatRoute
+  FishMarketRoute: typeof FishMarketRoute
+  FriendsRoute: typeof FriendsRoute
+  SeaStudioRoute: typeof SeaStudioRoute
+  SettingsRoute: typeof SettingsRoute
+  ShieldsTestRoute: typeof ShieldsTestRoute
+  ShipyardRoute: typeof ShipyardRoute
+  TribesRoute: typeof TribesRoute
+  AdminBattleRoute: typeof AdminBattleRoute
+  VillageIdRoute: typeof VillageIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +208,107 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fish-market': {
+      id: '/fish-market'
+      path: '/fish-market'
+      fullPath: '/fish-market'
+      preLoaderRoute: typeof FishMarketRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/friends': {
+      id: '/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof FriendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sea-studio': {
+      id: '/sea-studio'
+      path: '/sea-studio'
+      fullPath: '/sea-studio'
+      preLoaderRoute: typeof SeaStudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shields-test': {
+      id: '/shields-test'
+      path: '/shields-test'
+      fullPath: '/shields-test'
+      preLoaderRoute: typeof ShieldsTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shipyard': {
+      id: '/shipyard'
+      path: '/shipyard'
+      fullPath: '/shipyard'
+      preLoaderRoute: typeof ShipyardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tribes': {
+      id: '/tribes'
+      path: '/tribes'
+      fullPath: '/tribes'
+      preLoaderRoute: typeof TribesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_/battle': {
+      id: '/admin_/battle'
+      path: '/admin/battle'
+      fullPath: '/admin/battle'
+      preLoaderRoute: typeof AdminBattleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/village/$id': {
+      id: '/village/$id'
+      path: '/village/$id'
+      fullPath: '/village/$id'
+      preLoaderRoute: typeof VillageIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AuthRoute: AuthRoute,
+  ChatRoute: ChatRoute,
+  FishMarketRoute: FishMarketRoute,
+  FriendsRoute: FriendsRoute,
+  SeaStudioRoute: SeaStudioRoute,
+  SettingsRoute: SettingsRoute,
+  ShieldsTestRoute: ShieldsTestRoute,
+  ShipyardRoute: ShipyardRoute,
+  TribesRoute: TribesRoute,
+  AdminBattleRoute: AdminBattleRoute,
+  VillageIdRoute: VillageIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
