@@ -314,8 +314,11 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
             } else if (h.kind === "miss") {
               float(h.side, h.ship, "طاشت!", "miss");
               // A frozen or pinned ship strains against its shell but cannot slip aside.
-              if (live.current[h.side].ships[h.ship]!.frozen) layer.current?.shiver(`${h.side}:${h.ship}`);
-              else if (live.current[h.side].ships[h.ship]!.lock > 0) layer.current?.shiverPin(`${h.side}:${h.ship}`);
+              if (layer.current) {
+                const L = layer.current;
+                if (live.current[h.side].ships[h.ship]!.frozen) playMoveFail({ side: h.side, ship: h.ship, reason: "مجمّدة" }, L);
+                else if (live.current[h.side].ships[h.ship]!.lock > 0) playMoveFail({ side: h.side, ship: h.ship, reason: "مثبّتة" }, L);
+              }
             } else {
               if (e.weapon !== "missile") float(h.side, h.ship, h.kind === "splash" ? `شظايا −${h.dmg}` : `−${h.dmg}`, h.dmg >= 36 ? "crit" : "dmg");
               (h.side === "b" ? top : bottom).current?.kick(h.ship, 0.02, 0.008);
