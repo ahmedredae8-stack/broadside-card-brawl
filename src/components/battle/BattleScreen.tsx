@@ -440,6 +440,45 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     if (play("a", card, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
     else playSfx("hover", 0.4);
   };
+  const onTargetRef = useRef(onTarget);
+  onTargetRef.current = onTarget;
+
+  // Pointer drag: press a card and drop it on a ship (touch and mouse). A tap still selects/toggles.
+  const drag = useRef<{ id: CardId; sx: number; sy: number; moved: boolean } | null>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
+  const [dragArt, setDragArt] = useState<string | null>(null);
+  useEffect(() => {
+    const move = (e: PointerEvent) => {
+      const d = drag.current, g = ghostRef.current;
+      if (!d || !g) return;
+      if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 14) return;
+      if (!d.moved) {
+        d.moved = true;
+        setCard(d.id);
+        setDragArt(CARDS.find((c) => c.id === d.id)!.art);
+        g.style.display = "grid";
+      }
+      g.style.left = `${e.clientX}px`;
+      g.style.top = `${e.clientY}px`;
+      const t = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest("[data-bt-target]") as HTMLElement | null;
+      setDropHot(t ? `${t.dataset.side}${t.dataset.ship}` : null);
+    };
+    const up = (e: PointerEvent) => {
+      const d = drag.current, g = ghostRef.current;
+      drag.current = null;
+      if (g) { g.style.display = "none"; }
+      setDropHot(null);
+      if (!d) return;
+      setDragArt(null);
+      if (!d.moved) return; // tap: the click handler toggles the selection
+      const t = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest("[data-bt-target]") as HTMLElement | null;
+      if (t) onTargetRef.current(t.dataset.side as Side, Number(t.dataset.ship));
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); };
+  }, []);
 
   const total = CFG.shipHp * 3;
   const isShieldCard = card === "shield" || card === "royal";
