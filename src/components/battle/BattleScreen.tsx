@@ -510,13 +510,12 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
         {targetable && (
           <button
             type="button"
+            data-bt-target="1"
+            data-side={side}
+            data-ship={i}
             className={`${isShieldCard ? "bt-target bt-target-own" : "bt-target"}${dropHot === `${side}${i}` ? " hot" : ""}`}
             style={{ left: c.x, top: c.y, width: hs.w * 1.1, height: hs.h * 1.4 }}
             onClick={() => onTarget(side, i)}
-            onDragOver={(e) => { if (card) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } }}
-            onDragEnter={() => { if (card) setDropHot(`${side}${i}`); }}
-            onDragLeave={() => setDropHot((h) => (h === `${side}${i}` ? null : h))}
-            onDrop={(e) => { e.preventDefault(); onTarget(side, i); }}
             aria-label={isShieldCard ? `درّع سفينتك ${i + 1}` : `اضرب سفينة العدو ${i + 1}`}
           >
             {isShieldCard ? <Shield /> : <Crosshair />}
@@ -574,10 +573,8 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
                   type="button"
                   className={`bt-card bt-card-${c.id}${card === c.id ? " on" : ""}${ready ? " ready" : ""}`}
                   disabled={noShip || outOfShields}
-                  draggable={ready}
-                  onClick={() => { setCard(card === c.id ? null : c.id); playSfx("click", 0.5); }}
-                  onDragStart={(e) => { if (!ready) { e.preventDefault(); return; } setCard(c.id); e.dataTransfer.setData("text/plain", c.id); e.dataTransfer.effectAllowed = "copy"; }}
-                  onDragEnd={() => setDropHot(null)}
+                  onPointerDown={(e) => { if (ready && e.button !== 2) drag.current = { id: c.id, sx: e.clientX, sy: e.clientY, moved: false }; }}
+                  onClick={() => { if (drag.current) return; setCard(card === c.id ? null : c.id); playSfx("click", 0.5); }}
                   aria-pressed={card === c.id}
                 >
                   <span className="bt-card-cost">{c.cost}</span>
