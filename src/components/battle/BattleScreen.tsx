@@ -281,6 +281,16 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     return { t: "fire", side, ship, weapon, aim: { ship: target, spot: kind === "miss" ? (T.spot ? 0 : 1) : T.spot }, hits: [{ side: def, ship: target, spot, kind, dmg, tags }] };
   };
 
+  const shipCenter = (side: Side, ship: number) => at(side, ship, live.current[side].ships[ship]!.spot, 0.45);
+
+  /** Keep ongoing auras (burning flames, ice, harpoon ropes) honest with the live state after every round of events. */
+  const syncAuras = () => {
+    const L = layer.current;
+    if (!L) return;
+    syncIce(live.current, { layer: L, shipCenter });
+    syncPin(live.current, { layer: L, shipCenter, launchPoint: (side, ship, kind) => at(side, ship, live.current[side].ships[ship]!.spot, kind === "waterline" ? 0 : 0.8) });
+  };
+
   const fire = (ev: DuelFireEvent) => {
     const key = `${ev.side}${ev.ship}`;
     busy.current[key] = true;
@@ -290,6 +300,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
         layer: layer.current,
         launchPoint: (side, ship, kind) => at(side, ship, live.current[side].ships[ship]!.spot, kind === "waterline" ? 0 : 0.8),
         spotCenter: (side, ship, spot) => at(side, ship, spot, 0.45),
+        shipCenter,
         onMissileImpact: (_i, e) => { const h = e.hits[0]; if (h && h.kind !== "miss" && h.kind !== "blocked") float(h.side, h.ship, "−10", "dmg"); },
         onUnsupported: () => undefined,
         onImpact: (e) => {
@@ -299,17 +310,34 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
               float(h.side, h.ship, h.reflect ? "انعكاس!" : "صدّ الدرع!", "block");
               commitView((n) => { const s = n[h.side].ships[h.ship]!; if (s.shield) { s.shield.hits -= 1; if (s.shield.hits <= 0) { shieldState(h.side, h.ship, "break"); window.setTimeout(() => commitView((m) => { m[h.side].ships[h.ship]!.shield = null; }), 600); } } });
               if (h.reflect) { const r = h.reflect; float(e.side, r.ship, `↩ −${r.dmg}`, "dmg"); damage(e.side, r.ship, r.dmg); }
-            } else if (h.kind === "miss") float(h.side, h.ship, "طاشت!", "miss");
-            else {
+            } else if (h.kind === "miss") {
+              float(h.side, h.ship, "طاشت!", "miss");
+              // A frozen or pinned ship strains against its shell but cannot slip aside.
+              if (live.current[h.side].ships[h.ship]!.frozen) layer.current?.shiver(`${h.side}:${h.ship}`);
+              else if (live.current[h.side].ships[h.ship]!.lock > 0) layer.current?.shiverPin(`${h.side}:${h.ship}`);
+            } else {
               if (e.weapon !== "missile") float(h.side, h.ship, h.kind === "splash" ? `شظايا −${h.dmg}` : `−${h.dmg}`, h.dmg >= 36 ? "crit" : "dmg");
               (h.side === "b" ? top : bottom).current?.kick(h.ship, 0.02, 0.008);
+              // Statuses land at impact: fire sets the ship ablaze, ice freezes it, the harpoon pins it; a shattering blow cracks the ice.
+              const tag = (t: string) => h.tags?.includes(t);
+              commitView((n) => {
+                const s = n[h.side].ships[h.ship]!;
+                if (!s.alive) return;
+                if (tag("حرق")) s.burn = CFG.burnRounds;
+                if (tag("تجميد")) { s.frozen = true; s.lock = 1; }
+                if (tag("تثبيت")) s.lock = 1;
+                if (tag("تحطّم ×2")) { s.frozen = false; s.lock = 0; }
+              });
+              if (tag("تجميد")) float(h.side, h.ship, "تجمّدت!", "info");
+              else if (tag("تثبيت")) float(h.side, h.ship, "تثبّتت!", "info");
+              else if (tag("حرق")) float(h.side, h.ship, "اشتعلت!", "crit");
               damage(h.side, h.ship, h.dmg);
             }
           }
         },
       };
       firing.current = { side: ev.side, ship: ev.ship };
-      try { await playFireEvent(ev, ctx); } finally { firing.current = null; busy.current[key] = false; }
+      try { await playFireEvent(ev, ctx); } finally { firing.current = null; busy.current[key] = false; syncAuras(); }
     };
     queue.current = queue.current.then(run, run);
   };
