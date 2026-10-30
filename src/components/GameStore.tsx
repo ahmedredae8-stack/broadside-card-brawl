@@ -4,7 +4,12 @@ import { Check, Crown, Gem, Minus, Plus, Shield, ShipWheel, Swords, Users, X } f
 import { Button } from "@/components/ui/button";
 import { GameSprite } from "@/components/GameSprite";
 import { CREW_ART, CREW_ART_MAP } from "@/lib/art";
-import { CREWS, GEM_PACKS, WEAPONS } from "@/lib/items";
+import { CREWS, GEM_PACKS } from "@/lib/items";
+import { CARDS } from "@/components/battle/BattleScreen";
+
+/** Store prices for battle weapon cards and shield tiers: stronger effects cost more. */
+const CARD_PRICE: Record<string, number> = { cannon: 2_000, harpoon: 6_000, missile: 12_000, mortar: 18_000, fire_barrel: 28_000, frost_shell: 35_000, torpedo: 150 };
+const SHIELD_PRICE: Record<number, number> = { 1: 3_000, 2: 12_000, 3: 40_000, 4: 120, 5: 350 };
 import ShieldOverlay from "@/shields/ShieldOverlay";
 import shieldData from "@/shields/shields.json";
 import SeaScene from "@/components/SeaScene";
@@ -81,9 +86,9 @@ export function GameStore({ activeId, onSelect, onClose }: { activeId: string; o
   const art = useArtworkMap();
   const liveShips = useLiveShips();
   const products = useMemo<Product[]>(() => {
-    if (tab === "weapons") return WEAPONS.map((item, index) => ({ id: item.id, title: item.name, desc: `${item.desc} · قوة تدميرية ${item.power * 1000}`, price: item.price, currency: item.currency, art: art[`${item.id}:idle`] ? <img src={art[`${item.id}:idle`]} alt="" loading="lazy" /> : <GameSprite atlas="weapon" index={index} /> }));
+    if (tab === "weapons") return CARDS.filter((c) => c.id !== "shield" && c.id !== "royal").map((c) => ({ id: c.id, title: c.name, desc: `${c.note} · طاقة ${c.cost}`, price: CARD_PRICE[c.id] ?? 0, currency: c.id === "torpedo" ? "gem" as const : "coin" as const, art: <img src={c.art} alt="" loading="lazy" /> }));
     if (tab === "crew") return CREWS.map((item, index) => ({ id: item.id, title: item.name, desc: `${item.desc} · ${item.hours}H`, price: item.price, currency: item.currency, art: <img src={art[`store:crew-${item.id}:idle`] || CREW_ART_MAP[item.id] || CREW_ART[index % CREW_ART.length]} alt="" loading="lazy" className="crew-photo" /> }));
-    if (tab === "armor") return SHIELDS.map((s) => ({ id: s.id, title: s.name_ar, desc: `يصد: ${s.blocks.map((b) => BLOCK_AR[b] ?? b).join("، ")} · ${s.hits} ضربة${s.reflect ? ` · يعكس ${Math.round(s.reflect * 100)}%` : ""}`, price: 0, currency: "coin" as const, art: art[`store:shield-${s.id}:idle`] ? <img src={art[`store:shield-${s.id}:idle`]} alt="" loading="lazy" /> : <span className="shield-thumb"><ShieldOverlay tier={s.tier} state="idle" width="100%" /></span> }));
+    if (tab === "armor") return SHIELDS.map((s) => ({ id: s.id, title: s.name_ar, desc: `يصد: ${s.blocks.map((b) => BLOCK_AR[b] ?? b).join("، ")} · ${s.hits} ضربة${s.reflect ? ` · يعكس ${Math.round(s.reflect * 100)}%` : ""}`, price: SHIELD_PRICE[s.tier], currency: s.tier >= 4 ? "gem" as const : "coin" as const, art: art[`store:shield-${s.id}:idle`] ? <img src={art[`store:shield-${s.id}:idle`]} alt="" loading="lazy" /> : <span className="shield-thumb"><ShieldOverlay tier={s.tier} state="idle" width="100%" /></span> }));
     if (tab === "ships") return [];
 
     return [];
@@ -116,7 +121,7 @@ export function GameStore({ activeId, onSelect, onClose }: { activeId: string; o
                 <li key={s.key}>
                   <Button variant="ghost" onClick={() => { playSfx("click", 0.5); setShipOpen(s); }} className="store-product item-card">
                     <span className="product-art"><img className="ship-full" src={resolveShipArtwork(art, s.id, "idle", s.photo)} alt="" loading="lazy" /></span>
-                    <span className="product-copy"><strong>{s.name}</strong><small>مستوى {s.data.tier} · {s.data.class_ar} · رحلة {tripLabel(s.tripSeconds)}</small></span>
+                    <span className="product-copy"><strong>{s.name}</strong><small>مستوى {s.data.tier} · {s.data.class_ar} · رحلة {tripLabel(s.tripSeconds)}</small><b className="store-ship-price">{s.price ? `${fmt(s.price)} ${s.currency === "gem" ? "💎" : "🪙"}` : "مجانية"}</b></span>
                   </Button>
                 </li>
               ))}

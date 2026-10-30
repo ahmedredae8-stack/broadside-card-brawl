@@ -3194,3 +3194,4 @@
 .bt-lab label { display: flex; justify-content: space-between; align-items: center; gap: .4rem; }
 .bt-lab select, .bt-lab input[type=range] { max-width: 7rem; background: oklch(.2 .04 255); color: inherit; border-radius: .3rem; }
 .bt-fx-layer { position: absolute; inset: 0; z-index: 14; pointer-events: none; }
+.store-ship-price { display:block; margin-top:.15rem; font-size:.75rem; color: var(--tos-gold); }
