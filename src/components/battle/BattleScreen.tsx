@@ -49,6 +49,8 @@ export const MANA_MAX = 10;
 export const MATCH_SECONDS = 120;
 export const OVERTIME_AT = 30; // last 30s: energy flows twice as fast
 export const MANA_PER_SEC = 0.75;
+/** The enemy captain gathers energy a bit slower than the player so duels are winnable. */
+export const BOT_MANA_FACTOR = 0.8;
 export type CardId = "cannon" | "missile" | "mortar" | "torpedo" | "fire_barrel" | "frost_shell" | "harpoon" | "shield" | "royal";
 export const CARDS: { id: CardId; cost: number; name: string; art: string; note: string }[] = [
   { id: "cannon", cost: 2, name: "المدفع", art: cannonArt, note: `ضرر ${WEAPONS["cannon"]!.dmg}` },
@@ -194,7 +196,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
         const rate = manaRate(next) * (L?.regenX ?? 1) * dt;
         const m = manaRef.current;
         m.a = L?.infinite ? MANA_MAX : Math.min(MANA_MAX, m.a + rate);
-        m.b = Math.min(MANA_MAX, m.b + rate);
+        m.b = Math.min(MANA_MAX, m.b + rate * BOT_MANA_FACTOR);
         setMana({ ...m });
         if (next <= 0) finish();
         return next;
@@ -260,7 +262,9 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     // The enemy captain may slip aside at the last second (spot weapons only) — but a frozen or harpooned ship cannot dodge.
     let spot = T.spot;
     const pinned = T.frozen || T.lock > 0;
-    const dodge = !L && wp.aim === "spot" && !pinned && rnd() < (def === "b" ? 0.22 : 0.15);
+    // Aimed cards always land: no random dodges (a dropped card must feel like a hit).
+    void pinned; void rnd;
+    const dodge = false;
     let kind: DuelHit["kind"] = "hit";
     let dmg = Math.round(wp.dmg * mult);
     const tags: string[] = [];
@@ -346,7 +350,12 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     queue.current = queue.current.then(run, run);
   };
 
-  const gunner = (side: Side, weapon: string) => live.current[side].ships.findIndex((s, i) => s.alive && s.weapons.some((w) => w.id === weapon) && !busy.current[`${side}${i}`]);
+  // Prefer an idle gunner; if every armed ship is mid-shot the card still fires (queued) instead of bouncing back.
+  const gunner = (side: Side, weapon: string) => {
+    const ships = live.current[side].ships;
+    const idle = ships.findIndex((s, i) => s.alive && s.weapons.some((w) => w.id === weapon) && !busy.current[`${side}${i}`]);
+    return idle >= 0 ? idle : ships.findIndex((s) => s.alive && s.weapons.some((w) => w.id === weapon));
+  };
 
   /** Spend energy and play a card. Returns false when it can't be played. */
   const play = (side: Side, id: CardId, target: number): boolean => {
@@ -390,9 +399,9 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
         ? ["torpedo", "missile", "cannon", "harpoon"]
         : m >= 8 ? ["torpedo", "mortar", "missile", "cannon", "frost_shell", "fire_barrel", "harpoon"]
         : ["mortar", "missile", "cannon", "fire_barrel", "frost_shell", "harpoon"];
-      if (rnd() < 0.35) return; // breathe: saves energy for heavier cards
+      if (rnd() < 0.55) return; // breathe: saves energy for heavier cards
       for (const c of order) if (m >= cardCost(c) && gunner("b", c) >= 0) { play("b", c, weak.i); return; }
-    }, 900);
+    }, 1500);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [over]);
@@ -434,11 +443,12 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     },
   };
 
-  const onTarget = (side: Side, i: number) => {
-    if (!card) return;
+  const onTarget = (_side: Side, i: number, forced?: CardId) => {
+    const c = forced ?? card;
+    if (!c) return;
     setDropHot(null);
-    if (play("a", card, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
-    else playSfx("hover", 0.4);
+    if (play("a", c, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
+    else { playSfx("hover", 0.4); if (manaRef.current.a < cardCost(c)) shout("طاقة غير كافية"); }
   };
   const onTargetRef = useRef(onTarget);
   onTargetRef.current = onTarget;
@@ -472,7 +482,21 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       setDragArt(null);
       if (!d.moved) return; // tap: the click handler toggles the selection
       const t = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest("[data-bt-target]") as HTMLElement | null;
-      if (t) onTargetRef.current(t.dataset["side"] as Side, Number(t.dataset["ship"]));
+      if (t) { onTargetRef.current(t.dataset["side"] as Side, Number(t.dataset["ship"]), d.id); return; }
+      // Generous drop: anywhere over the right sea picks the nearest living ship.
+      const side: Side = d.id === "shield" || d.id === "royal" ? "a" : "b";
+      const box = (side === "b" ? topBox : bottomBox).current, r = root.current;
+      if (!box || !r) return;
+      const br = box.getBoundingClientRect(), rr = r.getBoundingClientRect();
+      if (e.clientY < br.top - 30 || e.clientY > br.bottom + 30) return;
+      let best = -1, bd = Infinity;
+      live.current[side].ships.forEach((s, i) => {
+        if (!s.alive) return;
+        const p = at(side, i, s.spot, 0.45);
+        const dd = Math.hypot(p.x + rr.left - e.clientX, p.y + rr.top - e.clientY);
+        if (dd < bd) { bd = dd; best = i; }
+      });
+      if (best >= 0) onTargetRef.current(side, best, d.id);
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -547,7 +571,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
           <span className="bt-tag">{me.name}</span>
         </div>
       </div>
-      <WeaponsLayer ref={layer} {...hooks} />
+      <div className="bt-fx-layer"><WeaponsLayer ref={layer} {...hooks} /></div>
       <div className="bt-flash" ref={flash} />
       <div className="bt-ghost" ref={ghostRef} aria-hidden="true">{dragArt && <img src={dragArt} alt="" draggable={false} />}</div>
       {banner && <strong className="bt-shout" key={banner.id}>{banner.text}</strong>}

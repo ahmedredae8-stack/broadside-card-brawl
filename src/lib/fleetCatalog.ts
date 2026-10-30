@@ -28,6 +28,13 @@ export type FleetShip = {
   data: CatalogShip;
 };
 
+/** Default price ladder by tier (admin overrides still win). Each step costs more than the last. */
+export function shipPrice(tier: number, index: number): number {
+  if (tier >= 5) return 300 + index * 50; // gems
+  const ladder = [0, 15_000, 45_000, 100_000, 220_000];
+  return (ladder[tier] ?? 0) + (tier === 0 ? index * 2_000 : index * 5_000);
+}
+
 const base = (file: string) => file.split("/").pop()!.replace(/\.[a-z]+$/i, "");
 
 export const fleetCatalog: FleetShip[] = SHIP_DATA.ships.map((s, i) => ({
@@ -40,8 +47,8 @@ export const fleetCatalog: FleetShip[] = SHIP_DATA.ships.map((s, i) => ({
   hull: `/ships/sea/${base(s.file)}.png`,
   photo: `/ships/catalog/${base(s.file)}.jpg`,
   // Prices are set by the admin in the studio (ship overrides).
-  price: 0,
-  currency: "coin",
+  price: shipPrice(s.tier, i),
+  currency: s.tier >= 5 ? "gem" : "coin",
   data: s,
 }));
 
