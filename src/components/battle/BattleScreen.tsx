@@ -260,7 +260,9 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     // The enemy captain may slip aside at the last second (spot weapons only) — but a frozen or harpooned ship cannot dodge.
     let spot = T.spot;
     const pinned = T.frozen || T.lock > 0;
-    const dodge = !L && wp.aim === "spot" && !pinned && rnd() < (def === "b" ? 0.22 : 0.15);
+    // Aimed cards always land: no random dodges (a dropped card must feel like a hit).
+    void pinned; void rnd;
+    const dodge = false;
     let kind: DuelHit["kind"] = "hit";
     let dmg = Math.round(wp.dmg * mult);
     const tags: string[] = [];
@@ -346,7 +348,12 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     queue.current = queue.current.then(run, run);
   };
 
-  const gunner = (side: Side, weapon: string) => live.current[side].ships.findIndex((s, i) => s.alive && s.weapons.some((w) => w.id === weapon) && !busy.current[`${side}${i}`]);
+  // Prefer an idle gunner; if every armed ship is mid-shot the card still fires (queued) instead of bouncing back.
+  const gunner = (side: Side, weapon: string) => {
+    const ships = live.current[side].ships;
+    const idle = ships.findIndex((s, i) => s.alive && s.weapons.some((w) => w.id === weapon) && !busy.current[`${side}${i}`]);
+    return idle >= 0 ? idle : ships.findIndex((s) => s.alive && s.weapons.some((w) => w.id === weapon));
+  };
 
   /** Spend energy and play a card. Returns false when it can't be played. */
   const play = (side: Side, id: CardId, target: number): boolean => {
@@ -434,11 +441,12 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     },
   };
 
-  const onTarget = (side: Side, i: number) => {
-    if (!card) return;
+  const onTarget = (_side: Side, i: number, forced?: CardId) => {
+    const c = forced ?? card;
+    if (!c) return;
     setDropHot(null);
-    if (play("a", card, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
-    else playSfx("hover", 0.4);
+    if (play("a", c, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
+    else { playSfx("hover", 0.4); if (manaRef.current.a < cardCost(c)) shout("طاقة غير كافية"); }
   };
   const onTargetRef = useRef(onTarget);
   onTargetRef.current = onTarget;
@@ -472,7 +480,21 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       setDragArt(null);
       if (!d.moved) return; // tap: the click handler toggles the selection
       const t = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest("[data-bt-target]") as HTMLElement | null;
-      if (t) onTargetRef.current(t.dataset["side"] as Side, Number(t.dataset["ship"]));
+      if (t) { onTargetRef.current(t.dataset["side"] as Side, Number(t.dataset["ship"]), d.id); return; }
+      // Generous drop: anywhere over the right sea picks the nearest living ship.
+      const side: Side = d.id === "shield" || d.id === "royal" ? "a" : "b";
+      const box = (side === "b" ? topBox : bottomBox).current, r = root.current;
+      if (!box || !r) return;
+      const br = box.getBoundingClientRect(), rr = r.getBoundingClientRect();
+      if (e.clientY < br.top - 30 || e.clientY > br.bottom + 30) return;
+      let best = -1, bd = Infinity;
+      live.current[side].ships.forEach((s, i) => {
+        if (!s.alive) return;
+        const p = at(side, i, s.spot, 0.45);
+        const dd = Math.hypot(p.x + rr.left - e.clientX, p.y + rr.top - e.clientY);
+        if (dd < bd) { bd = dd; best = i; }
+      });
+      if (best >= 0) onTargetRef.current(side, best, d.id);
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
