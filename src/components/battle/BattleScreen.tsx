@@ -49,6 +49,8 @@ export const MANA_MAX = 10;
 export const MATCH_SECONDS = 120;
 export const OVERTIME_AT = 30; // last 30s: energy flows twice as fast
 export const MANA_PER_SEC = 0.75;
+/** The enemy captain gathers energy a bit slower than the player so duels are winnable. */
+export const BOT_MANA_FACTOR = 0.8;
 export type CardId = "cannon" | "missile" | "mortar" | "torpedo" | "fire_barrel" | "frost_shell" | "harpoon" | "shield" | "royal";
 export const CARDS: { id: CardId; cost: number; name: string; art: string; note: string }[] = [
   { id: "cannon", cost: 2, name: "المدفع", art: cannonArt, note: `ضرر ${WEAPONS["cannon"]!.dmg}` },
@@ -194,7 +196,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
         const rate = manaRate(next) * (L?.regenX ?? 1) * dt;
         const m = manaRef.current;
         m.a = L?.infinite ? MANA_MAX : Math.min(MANA_MAX, m.a + rate);
-        m.b = Math.min(MANA_MAX, m.b + rate);
+        m.b = Math.min(MANA_MAX, m.b + rate * BOT_MANA_FACTOR);
         setMana({ ...m });
         if (next <= 0) finish();
         return next;
