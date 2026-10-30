@@ -21,3 +21,6 @@
 - [ ] Admin studio: product image upload not saving/updating
 - [ ] Messages window redesign (strip non-essentials)
 - [ ] Pirate search in dock -> pro profile window (message/attack) -> VS screen + 10s countdown + initiative -> split battle arena with weapons 1-4 + bot when offline
+- [x] Battle: aimed cards always hit, drop anywhere over enemy sea, weapons FX above ships, slower enemy captain
+- [x] Store: battle weapon cards + shields with prices; ship price ladder by tier
+- [ ] Fleet: 10 tiers × 7 distinct ships (each better than the previous), facing right, new artwork
