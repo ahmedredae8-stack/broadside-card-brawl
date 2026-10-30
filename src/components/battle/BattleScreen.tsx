@@ -397,9 +397,9 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
         ? ["torpedo", "missile", "cannon", "harpoon"]
         : m >= 8 ? ["torpedo", "mortar", "missile", "cannon", "frost_shell", "fire_barrel", "harpoon"]
         : ["mortar", "missile", "cannon", "fire_barrel", "frost_shell", "harpoon"];
-      if (rnd() < 0.35) return; // breathe: saves energy for heavier cards
+      if (rnd() < 0.55) return; // breathe: saves energy for heavier cards
       for (const c of order) if (m >= cardCost(c) && gunner("b", c) >= 0) { play("b", c, weak.i); return; }
-    }, 900);
+    }, 1500);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [over]);
@@ -569,7 +569,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
           <span className="bt-tag">{me.name}</span>
         </div>
       </div>
-      <WeaponsLayer ref={layer} {...hooks} />
+      <div className="bt-fx-layer"><WeaponsLayer ref={layer} {...hooks} /></div>
       <div className="bt-flash" ref={flash} />
       <div className="bt-ghost" ref={ghostRef} aria-hidden="true">{dragArt && <img src={dragArt} alt="" draggable={false} />}</div>
       {banner && <strong className="bt-shout" key={banner.id}>{banner.text}</strong>}
