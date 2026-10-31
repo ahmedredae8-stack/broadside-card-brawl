@@ -516,7 +516,8 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     const fx = shieldFx[`${side}${i}`];
     const base = point(i, s.spot, 0);
     const targetable = s.alive && !over && card && (isShieldCard ? side === "a" && !s.shield : side === "b");
-    const c = point(i, s.spot, 0.45);
+    const c = point(i, s.spot, 0.35);
+    const movable = side === "a" && s.alive && !over && !card && !s.frozen && !(s.lock > 0);
     return (
       <div key={i}>
         {s.alive && (
@@ -545,6 +546,17 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
             aria-label={isShieldCard ? `درّع سفينتك ${i + 1}` : `اضرب سفينة العدو ${i + 1}`}
           >
             {isShieldCard ? <Shield /> : <Crosshair />}
+          </button>
+        )}
+        {movable && (
+          <button
+            type="button"
+            className="bt-move"
+            style={{ left: c.x, top: c.y, width: hs.w * 1.1, height: hs.h * 1.4 }}
+            onClick={() => { commitView((n) => { const t = n.a.ships[i]!; t.spot = t.spot ? 0 : 1; }); playSfx("click", 0.4); }}
+            aria-label={`حرّك سفينتك ${i + 1}`}
+          >
+            <span>⇄</span>
           </button>
         )}
       </div>

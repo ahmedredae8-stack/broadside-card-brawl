@@ -3195,3 +3195,11 @@
 .bt-lab select, .bt-lab input[type=range] { max-width: 7rem; background: oklch(.2 .04 255); color: inherit; border-radius: .3rem; }
 .bt-fx-layer { position: absolute; inset: 0; z-index: 14; pointer-events: none; }
 .store-ship-price { display:block; margin-top:.15rem; font-size:.75rem; color: var(--tos-gold); }
+
+/* Own-ship maneuver: tap a ship (no card selected) to slide it to its other spot. */
+.bt-move { position: absolute; z-index: 11; transform: translate(-50%,-50%); display: grid; place-items: end center; background: transparent; border: 0; cursor: pointer; }
+.bt-move span { font-size: .9rem; font-weight: 900; color: oklch(.95 .05 220); background: oklch(.35 .12 240 / .75); border-radius: 99px; padding: 0 .45rem; box-shadow: 0 0 8px oklch(.7 .15 230); }
+/* Clear energy counter: big number with the max beside it. */
+.bt-mana .bt-mana-num { min-width: 3.4rem; height: 2rem; border-radius: 1rem; font-size: 1.15rem; gap: 1px; display: flex; align-items: baseline; justify-content: center; padding-top: .2rem; }
+.bt-mana .bt-mana-num small { font-size: .7rem; opacity: .75; }
+.bt-mana-track { height: 1.15rem; }
