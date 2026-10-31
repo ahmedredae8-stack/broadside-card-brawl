@@ -286,7 +286,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     return { t: "fire", side, ship, weapon, aim: { ship: target, spot: kind === "miss" ? (T.spot ? 0 : 1) : T.spot }, hits: [{ side: def, ship: target, spot, kind, dmg, tags }] };
   };
 
-  const shipCenter = (side: Side, ship: number) => at(side, ship, live.current[side].ships[ship]!.spot, 0.45);
+  const shipCenter = (side: Side, ship: number) => at(side, ship, live.current[side].ships[ship]!.spot, 0.35);
 
   /** Keep ongoing auras (burning flames, ice, harpoon ropes) honest with the live state after every round of events. */
   const syncAuras = () => {
@@ -304,7 +304,8 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       const ctx: PlayCtx = {
         layer: layer.current,
         launchPoint: (side, ship, kind) => at(side, ship, live.current[side].ships[ship]!.spot, kind === "waterline" ? 0 : 0.8),
-        spotCenter: (side, ship, spot) => at(side, ship, spot, 0.45),
+        // Impacts land on the ship's live hull (where it actually floats now), never on empty water.
+        spotCenter: (side, ship) => shipCenter(side, ship),
         shipCenter,
         onMissileImpact: (_i, e) => { const h = e.hits[0]; if (h && h.kind !== "miss" && h.kind !== "blocked") float(h.side, h.ship, "−10", "dmg"); },
         onUnsupported: () => undefined,
@@ -347,7 +348,8 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       firing.current = { side: ev.side, ship: ev.ship };
       try { await playFireEvent(ev, ctx); } finally { firing.current = null; busy.current[key] = false; syncAuras(); }
     };
-    queue.current = queue.current.then(run, run);
+    // Fire instantly: shots no longer wait for earlier projectiles to land.
+    void run();
   };
 
   // Prefer an idle gunner; if every armed ship is mid-shot the card still fires (queued) instead of bouncing back.
