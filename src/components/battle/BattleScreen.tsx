@@ -286,7 +286,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     return { t: "fire", side, ship, weapon, aim: { ship: target, spot: kind === "miss" ? (T.spot ? 0 : 1) : T.spot }, hits: [{ side: def, ship: target, spot, kind, dmg, tags }] };
   };
 
-  const shipCenter = (side: Side, ship: number) => at(side, ship, live.current[side].ships[ship]!.spot, 0.45);
+  const shipCenter = (side: Side, ship: number) => at(side, ship, live.current[side].ships[ship]!.spot, 0.35);
 
   /** Keep ongoing auras (burning flames, ice, harpoon ropes) honest with the live state after every round of events. */
   const syncAuras = () => {
@@ -304,7 +304,8 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       const ctx: PlayCtx = {
         layer: layer.current,
         launchPoint: (side, ship, kind) => at(side, ship, live.current[side].ships[ship]!.spot, kind === "waterline" ? 0 : 0.8),
-        spotCenter: (side, ship, spot) => at(side, ship, spot, 0.45),
+        // Impacts land on the ship's live hull (where it actually floats now), never on empty water.
+        spotCenter: (side, ship) => shipCenter(side, ship),
         shipCenter,
         onMissileImpact: (_i, e) => { const h = e.hits[0]; if (h && h.kind !== "miss" && h.kind !== "blocked") float(h.side, h.ship, "−10", "dmg"); },
         onUnsupported: () => undefined,
@@ -347,7 +348,8 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       firing.current = { side: ev.side, ship: ev.ship };
       try { await playFireEvent(ev, ctx); } finally { firing.current = null; busy.current[key] = false; syncAuras(); }
     };
-    queue.current = queue.current.then(run, run);
+    // Fire instantly: shots no longer wait for earlier projectiles to land.
+    void run();
   };
 
   // Prefer an idle gunner; if every armed ship is mid-shot the card still fires (queued) instead of bouncing back.
@@ -514,7 +516,8 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     const fx = shieldFx[`${side}${i}`];
     const base = point(i, s.spot, 0);
     const targetable = s.alive && !over && card && (isShieldCard ? side === "a" && !s.shield : side === "b");
-    const c = point(i, s.spot, 0.45);
+    const c = point(i, s.spot, 0.35);
+    const movable = side === "a" && s.alive && !over && !card && !s.frozen && !(s.lock > 0);
     return (
       <div key={i}>
         {s.alive && (
@@ -543,6 +546,17 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
             aria-label={isShieldCard ? `درّع سفينتك ${i + 1}` : `اضرب سفينة العدو ${i + 1}`}
           >
             {isShieldCard ? <Shield /> : <Crosshair />}
+          </button>
+        )}
+        {movable && (
+          <button
+            type="button"
+            className="bt-move"
+            style={{ left: c.x, top: c.y, width: hs.w * 1.1, height: hs.h * 1.4 }}
+            onClick={() => { commitView((n) => { const t = n.a.ships[i]!; t.spot = t.spot ? 0 : 1; }); playSfx("click", 0.4); }}
+            aria-label={`حرّك سفينتك ${i + 1}`}
+          >
+            <span>⇄</span>
           </button>
         )}
       </div>
