@@ -432,9 +432,9 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
     return true;
   };
 
-  // Enemy bot: watches its energy and plays cards like a captain would.
+  // Enemy bot: watches its energy and plays cards like a captain would (offline duels only).
   useEffect(() => {
-    if (over) return;
+    if (over || online) return;
     const id = window.setInterval(() => {
       if (labRef.current && !labRef.current.bot) return;
       const s = live.current, m = manaRef.current.b;
@@ -461,7 +461,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
     if (over) return;
     const id = window.setInterval(() => {
       const s = live.current;
-      (["a", "b"] as Side[]).forEach((side) => s[side].ships.forEach((sh, i) => {
+      (["a", "b"] as Side[]).filter((side) => !online || side === myS).forEach((side) => s[side].ships.forEach((sh, i) => {
         if (!sh.alive || sh.burn <= 0 || busy.current[`${side}${i}`]) return;
         queue.current = queue.current.then(async () => {
           if (overRef.current || !layer.current) return;
@@ -472,6 +472,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
             onBurn: (e) => { float(e.side, e.ship, `حرق −${e.dmg}`, "dmg"); damage(e.side, e.ship, e.dmg); },
           });
           commitView((n) => { const t = n[side].ships[i]!; if (t.alive) t.burn = Math.max(0, t.burn - 1); });
+          if (online && side === myS) session.current?.send({ t: "burn", side, ship: i, dmg: CFG.burnDamage, burnLeft: Math.max(0, live.current[side].ships[i]!.burn) });
           syncAuras();
         });
       }));
