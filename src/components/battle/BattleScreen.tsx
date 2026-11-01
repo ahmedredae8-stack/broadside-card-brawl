@@ -177,6 +177,42 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
   const foeWorld = worldFor(foe);
   const hull = fleetCatalog[0]!.hull;
 
+  // Live duel: open the battle channel and replay every play the rival captain makes.
+  useEffect(() => {
+    if (!online) return;
+    const s = DuelSession.open(online.matchId, online.role, {
+      onEvent: (ev: DuelWire) => {
+        if (ev.t === "fire") { setFoeMana((v) => Math.max(0, v - ev.cost)); fire(ev.ev); }
+        else if (ev.t === "shield") {
+          setFoeMana((v) => Math.max(0, v - ev.cost));
+          if (shieldsLeft.current[ev.side] > 0) shieldsLeft.current[ev.side] -= 1;
+          commitView((n) => { const t = n[ev.side].ships[ev.ship]; if (t?.alive && !t.shield) t.shield = { tier: ev.tier, hits: SHIELDS[ev.tier]!.hits }; });
+          shieldState(ev.side, ev.ship, "spawn");
+          float(ev.side, ev.ship, "درع!", "block");
+        } else if (ev.t === "burn") {
+          const L = layer.current;
+          if (!L) return;
+          void playBurnEvent({ t: "burn", side: ev.side, ship: ev.ship, dmg: ev.dmg }, {
+            layer: L,
+            shipCenter,
+            onBurn: (e) => { float(e.side, e.ship, `حرق −${e.dmg}`, "dmg"); damage(e.side, e.ship, e.dmg); },
+          });
+          commitView((n) => { const t = n[ev.side].ships[ev.ship]; if (t?.alive) t.burn = Math.max(0, ev.burnLeft); });
+          syncAuras();
+        } else if (ev.t === "move") {
+          commitView((n) => { const t = n[ev.side].ships[ev.ship]; if (t?.alive) t.spot = ev.spot; });
+          playSfx("click", 0.4);
+        } else if (ev.t === "leave") {
+          if (!overRef.current) { shout("انسحب الخصم!"); window.setTimeout(finish, 400); }
+        }
+      },
+      onFoeGone: () => { if (!overRef.current) { shout("انقطع اتصال الخصم!"); window.setTimeout(finish, 400); } },
+    });
+    session.current = s;
+    return () => { s.close(); session.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online?.matchId]);
+
   const commitView = (fn: (s: DuelState) => void) => { const n = structuredClone(live.current); fn(n); live.current = n; setView(n); };
   const float = (side: Side, ship: number, text: string, tone: Float["tone"]) => {
     const id = ++fid.current;
@@ -204,8 +240,11 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
         const next = L ? s : Math.max(0, s - dt);
         const rate = manaRate(next) * (L?.regenX ?? 1) * dt;
         const m = manaRef.current;
-        m.a = L?.infinite ? MANA_MAX : Math.min(MANA_MAX, m.a + rate);
-        m.b = Math.min(MANA_MAX, m.b + rate * BOT_MANA_FACTOR);
+        if (online) m[myS] = Math.min(MANA_MAX, m[myS] + rate);
+        else {
+          m.a = L?.infinite ? MANA_MAX : Math.min(MANA_MAX, m.a + rate);
+          m.b = Math.min(MANA_MAX, m.b + rate * BOT_MANA_FACTOR);
+        }
         setMana({ ...m });
         if (next <= 0) finish();
         return next;
