@@ -19,9 +19,9 @@ import type { Side } from "@/game/duel";
 export type LobbyMeta = {
   id: string;
   name: string;
-  avatar_index?: number;
-  avatar_url?: string | null;
-  score?: number;
+  avatar_index?: number | undefined;
+  avatar_url?: string | null | undefined;
+  score?: number | undefined;
   waiting: boolean;
   ts: number;
 };
@@ -53,9 +53,9 @@ export const playerFromMeta = (m: LobbyMeta): Player => ({
   theme_id: "",
   last_seen: new Date().toISOString(),
   created_at: "",
-  avatar_index: m.avatar_index,
-  avatar_url: m.avatar_url,
-  score: m.score,
+  ...(m.avatar_index !== undefined ? { avatar_index: m.avatar_index } : {}),
+  ...(m.avatar_url !== undefined ? { avatar_url: m.avatar_url } : {}),
+  ...(m.score !== undefined ? { score: m.score } : {}),
 });
 
 const LOBBY = "duel-lobby";
