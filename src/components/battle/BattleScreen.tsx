@@ -567,9 +567,9 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
     const p = point(i, s.spot, 1.05);
     const fx = shieldFx[`${side}${i}`];
     const base = point(i, s.spot, 0);
-    const targetable = s.alive && !over && card && (isShieldCard ? side === "a" && !s.shield : side === "b");
+    const targetable = s.alive && !over && card && (isShieldCard ? side === myS && !s.shield : side === foeS);
     const c = point(i, s.spot, 0.35);
-    const movable = side === "a" && s.alive && !over && !card && !s.frozen && !(s.lock > 0);
+    const movable = side === myS && s.alive && !over && !card && !s.frozen && !(s.lock > 0);
     return (
       <div key={i}>
         {s.alive && (
@@ -605,7 +605,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
             type="button"
             className="bt-move"
             style={{ left: c.x, top: c.y, width: hs.w * 1.1, height: hs.h * 1.4 }}
-            onClick={() => { commitView((n) => { const t = n.a.ships[i]!; t.spot = t.spot ? 0 : 1; }); playSfx("click", 0.4); }}
+            onClick={() => { const ns = s.spot ? 0 : 1; commitView((n) => { const t = n[side].ships[i]!; t.spot = ns; }); if (online && side === myS) session.current?.send({ t: "move", side, ship: i, spot: ns }); playSfx("click", 0.4); }}
             aria-label={`حرّك سفينتك ${i + 1}`}
           >
             <span>⇄</span>
@@ -620,20 +620,20 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
   return (
     <div className={overtime ? "bt-root bt-arena bt-overtime" : "bt-root bt-arena"} dir="rtl" ref={root} role="dialog" aria-label="ساحة المعركة">
       <header className="bt-top">
-        <SideBar p={foe} hp={hpSum(view, "b")} total={total} />
+        <SideBar p={foe} hp={hpSum(view, foeS)} total={total} />
         <div className="bt-round"><small>{lab ? "المختبر" : overtime ? "طاقة ×2" : "الوقت"}</small><b>{lab ? "∞" : `${mm}:${String(ss).padStart(2, "0")}`}</b></div>
-        <button type="button" className="tos-x bt-close" aria-label="انسحاب" onClick={onClose}><X className="h-4 w-4" /></button>
+        <button type="button" className="tos-x bt-close" aria-label="انسحاب" onClick={() => { if (online) session.current?.send({ t: "leave" }); onClose(); }}><X className="h-4 w-4" /></button>
       </header>
       <div className="bt-seas" ref={seas}>
         <div className="bt-panel bt-panel-foe" ref={topBox}>
-          <BattleSea ref={top} theme={foeWorld} ships={view.b.ships} hull={hull} mirrored stormy>{overlay("b")}</BattleSea>
-          <span className="bt-tag">{foe.name} <Bot className="h-3 w-3" /> <em>⚡{Math.floor(mana.b)}</em></span>
+          <BattleSea ref={top} theme={foeWorld} ships={view[foeS].ships} hull={hull} mirrored stormy>{overlay(foeS)}</BattleSea>
+          <span className="bt-tag">{foe.name} {!online && <Bot className="h-3 w-3" />} <em>⚡{Math.floor(online ? foeMana : mana[foeS])}</em></span>
         </div>
         <div className="bt-divider">
           <span className="bt-turn me">{over ? "انتهت المعركة" : card ? (isShieldCard ? "اسحب الدرع على سفينتك" : "اسحب البطاقة على سفينة العدو!") : "اسحب بطاقة أو اخترها"}</span>
         </div>
         <div className="bt-panel bt-panel-me" ref={bottomBox}>
-          <BattleSea ref={bottom} theme={myWorld} ships={view.a.ships} hull={hull} stormy>{overlay("a")}</BattleSea>
+          <BattleSea ref={bottom} theme={myWorld} ships={view[myS].ships} hull={hull} stormy>{overlay(myS)}</BattleSea>
           <span className="bt-tag">{me.name}</span>
         </div>
       </div>
