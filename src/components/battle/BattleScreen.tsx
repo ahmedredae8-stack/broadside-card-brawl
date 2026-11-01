@@ -28,6 +28,7 @@ import {
 import { BattleSea, type BattleSeaApi } from "@/components/battle/BattleSea";
 import { CFG, SHIELDS, WEAPONS, mulberry, newState, type DuelState, type Side } from "@/game/duel";
 import { fleetCatalog } from "@/lib/fleetCatalog";
+import { DuelSession, type DuelWire } from "@/lib/duelNet";
 import { SEA_WORLDS, loadSeaWorldId, getSeaWorld } from "@/lib/seaWorld";
 import { playSfx } from "@/lib/sound";
 import type { Player } from "@/lib/player";
