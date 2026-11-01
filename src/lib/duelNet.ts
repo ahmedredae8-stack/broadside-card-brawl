@@ -80,7 +80,7 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
     const chan = supabase.channel(LOBBY, { config: { presence: { key: me.id } } });
     chanRef.current = chan;
 
-    chan.on("presence", { event: "sync" }) && chan.on("presence", { event: "sync" }, () => {
+    chan.on("presence", { event: "sync" }, () => {
       const state = chan.presenceState() as Record<string, LobbyMeta[]>;
       const list: LobbyMeta[] = [];
       for (const [key, arr] of Object.entries(state)) {
