@@ -77,12 +77,12 @@ const other = (s: Side): Side => (s === "a" ? "b" : "a");
 type Float = { id: number; side: Side; ship: number; text: string; tone: "dmg" | "block" | "miss" | "info" | "crit" };
 type ShieldFx = Record<string, { state: ShieldState; trig: number }>;
 
-export function BattleScreen({ me, foe, onClose, lab, labKey }: { me: Player; foe: Player; onClose: () => void; lab?: LabOpts; labKey?: number }) {
+export function BattleScreen({ me, foe, onClose, lab, labKey, online }: { me: Player; foe: Player; onClose: () => void; lab?: LabOpts; labKey?: number; online?: { matchId: string; role: "host" | "guest" } }) {
   const seed = useMemo(() => hashSeed(`${me.id}|${foe.id}|${Date.now()}`), [me.id, foe.id]);
   const [stage, setStage] = useState<"vs" | "arena">(lab ? "arena" : "vs");
   return stage === "vs"
     ? <VsScreen me={me} foe={foe} onGo={() => setStage("arena")} onClose={onClose} />
-    : <Arena key={labKey ?? 0} me={me} foe={foe} seed={seed} onClose={onClose} lab={lab} />;
+    : <Arena key={labKey ?? 0} me={me} foe={foe} seed={seed} onClose={onClose} lab={lab} online={online} />;
 }
 
 /* ── Epic face-off: storm, captains clash in the middle, war cry, 3-2-1 ── */
@@ -134,7 +134,7 @@ function VsCard({ p, label, side }: { p: Player; label: string; side: Side }) {
 }
 
 /* ── Real-time arena: energy fills, cards fire instantly, both captains act at once ── */
-function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed: number; onClose: () => void; lab?: LabOpts | undefined }) {
+function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Player; seed: number; onClose: () => void; lab?: LabOpts | undefined; online?: { matchId: string; role: "host" | "guest" } | undefined }) {
   const rnd = useRef(mulberry(seed)).current;
   const [view, setView] = useState<DuelState>(() => newState({ first: "a", a: LOADOUT, b: LOADOUT }));
   const live = useRef(view);
@@ -164,6 +164,14 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
   labRef.current = lab;
   const overRef = useRef(over);
   overRef.current = over;
+
+  // Live duel: my canonical side (host plays "a") and the network session.
+  const myS: Side = online?.role === "guest" ? "b" : "a";
+  const foeS: Side = other(myS);
+  const session = useRef<DuelSession | null>(null);
+  const [foeMana, setFoeMana] = useState(4);
+  const onlineRef = useRef(online);
+  onlineRef.current = online;
 
   const myWorld = getSeaWorld(loadSeaWorldId());
   const foeWorld = worldFor(foe);
