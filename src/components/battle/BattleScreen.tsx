@@ -28,6 +28,7 @@ import {
 import { BattleSea, type BattleSeaApi } from "@/components/battle/BattleSea";
 import { CFG, SHIELDS, WEAPONS, mulberry, newState, type DuelState, type Side } from "@/game/duel";
 import { fleetCatalog } from "@/lib/fleetCatalog";
+import { DuelSession, type DuelWire } from "@/lib/duelNet";
 import { SEA_WORLDS, loadSeaWorldId, getSeaWorld } from "@/lib/seaWorld";
 import { playSfx } from "@/lib/sound";
 import type { Player } from "@/lib/player";
@@ -76,12 +77,12 @@ const other = (s: Side): Side => (s === "a" ? "b" : "a");
 type Float = { id: number; side: Side; ship: number; text: string; tone: "dmg" | "block" | "miss" | "info" | "crit" };
 type ShieldFx = Record<string, { state: ShieldState; trig: number }>;
 
-export function BattleScreen({ me, foe, onClose, lab, labKey }: { me: Player; foe: Player; onClose: () => void; lab?: LabOpts; labKey?: number }) {
+export function BattleScreen({ me, foe, onClose, lab, labKey, online }: { me: Player; foe: Player; onClose: () => void; lab?: LabOpts; labKey?: number; online?: { matchId: string; role: "host" | "guest" } }) {
   const seed = useMemo(() => hashSeed(`${me.id}|${foe.id}|${Date.now()}`), [me.id, foe.id]);
   const [stage, setStage] = useState<"vs" | "arena">(lab ? "arena" : "vs");
   return stage === "vs"
     ? <VsScreen me={me} foe={foe} onGo={() => setStage("arena")} onClose={onClose} />
-    : <Arena key={labKey ?? 0} me={me} foe={foe} seed={seed} onClose={onClose} lab={lab} />;
+    : <Arena key={labKey ?? 0} me={me} foe={foe} seed={seed} onClose={onClose} lab={lab} online={online} />;
 }
 
 /* ── Epic face-off: storm, captains clash in the middle, war cry, 3-2-1 ── */
@@ -133,7 +134,7 @@ function VsCard({ p, label, side }: { p: Player; label: string; side: Side }) {
 }
 
 /* ── Real-time arena: energy fills, cards fire instantly, both captains act at once ── */
-function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed: number; onClose: () => void; lab?: LabOpts | undefined }) {
+function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Player; seed: number; onClose: () => void; lab?: LabOpts | undefined; online?: { matchId: string; role: "host" | "guest" } | undefined }) {
   const rnd = useRef(mulberry(seed)).current;
   const [view, setView] = useState<DuelState>(() => newState({ first: "a", a: LOADOUT, b: LOADOUT }));
   const live = useRef(view);
@@ -164,9 +165,53 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
   const overRef = useRef(over);
   overRef.current = over;
 
+  // Live duel: my canonical side (host plays "a") and the network session.
+  const myS: Side = online?.role === "guest" ? "b" : "a";
+  const foeS: Side = other(myS);
+  const session = useRef<DuelSession | null>(null);
+  const [foeMana, setFoeMana] = useState(4);
+  const onlineRef = useRef(online);
+  onlineRef.current = online;
+
   const myWorld = getSeaWorld(loadSeaWorldId());
   const foeWorld = worldFor(foe);
   const hull = fleetCatalog[0]!.hull;
+
+  // Live duel: open the battle channel and replay every play the rival captain makes.
+  useEffect(() => {
+    if (!online) return;
+    const s = DuelSession.open(online.matchId, online.role, {
+      onEvent: (ev: DuelWire) => {
+        if (ev.t === "fire") { setFoeMana((v) => Math.max(0, v - ev.cost)); fire(ev.ev); }
+        else if (ev.t === "shield") {
+          setFoeMana((v) => Math.max(0, v - ev.cost));
+          if (shieldsLeft.current[ev.side] > 0) shieldsLeft.current[ev.side] -= 1;
+          commitView((n) => { const t = n[ev.side].ships[ev.ship]; if (t?.alive && !t.shield) t.shield = { tier: ev.tier, hits: SHIELDS[ev.tier]!.hits }; });
+          shieldState(ev.side, ev.ship, "spawn");
+          float(ev.side, ev.ship, "درع!", "block");
+        } else if (ev.t === "burn") {
+          const L = layer.current;
+          if (!L) return;
+          void playBurnEvent({ t: "burn", side: ev.side, ship: ev.ship, dmg: ev.dmg }, {
+            layer: L,
+            shipCenter,
+            onBurn: (e) => { float(e.side, e.ship, `حرق −${e.dmg}`, "dmg"); damage(e.side, e.ship, e.dmg); },
+          });
+          commitView((n) => { const t = n[ev.side].ships[ev.ship]; if (t?.alive) t.burn = Math.max(0, ev.burnLeft); });
+          syncAuras();
+        } else if (ev.t === "move") {
+          commitView((n) => { const t = n[ev.side].ships[ev.ship]; if (t?.alive) t.spot = ev.spot; });
+          playSfx("click", 0.4);
+        } else if (ev.t === "leave") {
+          if (!overRef.current) { shout("انسحب الخصم!"); window.setTimeout(finish, 400); }
+        }
+      },
+      onFoeGone: () => { if (!overRef.current) { shout("انقطع اتصال الخصم!"); window.setTimeout(finish, 400); } },
+    });
+    session.current = s;
+    return () => { s.close(); session.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online?.matchId]);
 
   const commitView = (fn: (s: DuelState) => void) => { const n = structuredClone(live.current); fn(n); live.current = n; setView(n); };
   const float = (side: Side, ship: number, text: string, tone: Float["tone"]) => {
@@ -179,8 +224,8 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
 
   const at = (side: Side, ship: number, spot: number, lift: number) => {
     const r = root.current!.getBoundingClientRect();
-    const p = (side === "b" ? topBox : bottomBox).current!.getBoundingClientRect();
-    const q = (side === "b" ? top : bottom).current!.point(ship, spot, lift);
+    const p = (side === foeS ? topBox : bottomBox).current!.getBoundingClientRect();
+    const q = (side === foeS ? top : bottom).current!.point(ship, spot, lift);
     return { x: p.left - r.left + q.x, y: p.top - r.top + q.y };
   };
 
@@ -195,8 +240,11 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
         const next = L ? s : Math.max(0, s - dt);
         const rate = manaRate(next) * (L?.regenX ?? 1) * dt;
         const m = manaRef.current;
-        m.a = L?.infinite ? MANA_MAX : Math.min(MANA_MAX, m.a + rate);
-        m.b = Math.min(MANA_MAX, m.b + rate * BOT_MANA_FACTOR);
+        if (online) m[myS] = Math.min(MANA_MAX, m[myS] + rate);
+        else {
+          m.a = L?.infinite ? MANA_MAX : Math.min(MANA_MAX, m.a + rate);
+          m.b = Math.min(MANA_MAX, m.b + rate * BOT_MANA_FACTOR);
+        }
         setMana({ ...m });
         if (next <= 0) finish();
         return next;
@@ -238,7 +286,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     top.current?.pause(320); bottom.current?.pause(320);
     flash.current?.animate([{ opacity: 0.85 }, { opacity: 0 }], { duration: 500 });
     root.current?.animate([{ transform: "translate(9px,-5px)" }, { transform: "translate(-8px,4px)" }, { transform: "translate(4px,2px)" }, { transform: "none" }], { duration: 600 });
-    shout(side === "b" ? "سفينة العدو غرقت!" : "سفينتك تغرق!");
+    shout(side === foeS ? "سفينة العدو غرقت!" : "سفينتك تغرق!");
     playSfx("click", 1);
     window.setTimeout(() => playSfx("click", 0.7), 280);
   };
@@ -326,7 +374,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
               }
             } else {
               if (e.weapon !== "missile") float(h.side, h.ship, h.kind === "splash" ? `شظايا −${h.dmg}` : `−${h.dmg}`, h.dmg >= 36 ? "crit" : "dmg");
-              (h.side === "b" ? top : bottom).current?.kick(h.ship, 0.02, 0.008);
+              (h.side === foeS ? top : bottom).current?.kick(h.ship, 0.02, 0.008);
               // Statuses land at impact: fire sets the ship ablaze, ice freezes it, the harpoon pins it; a shattering blow cracks the ice.
               const tag = (t: string) => h.tags?.includes(t);
               commitView((n) => {
@@ -374,19 +422,22 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       shieldState(side, target, "spawn");
       float(side, target, "درع!", "block");
       playSfx("click", 0.6);
+      if (online && side === myS) session.current?.send({ t: "shield", side, ship: target, tier, cost });
       return true;
     }
     const g = gunner(side, id);
     const t = live.current[other(side)].ships[target];
     if (g < 0 || !t?.alive) return false;
     m[side] -= cost; setMana({ ...m });
-    fire(strike(side, g, id, target));
+    const ev = strike(side, g, id, target);
+    fire(ev);
+    if (online && side === myS) session.current?.send({ t: "fire", ev, cost });
     return true;
   };
 
-  // Enemy bot: watches its energy and plays cards like a captain would.
+  // Enemy bot: watches its energy and plays cards like a captain would (offline duels only).
   useEffect(() => {
-    if (over) return;
+    if (over || online) return;
     const id = window.setInterval(() => {
       if (labRef.current && !labRef.current.bot) return;
       const s = live.current, m = manaRef.current.b;
@@ -413,7 +464,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     if (over) return;
     const id = window.setInterval(() => {
       const s = live.current;
-      (["a", "b"] as Side[]).forEach((side) => s[side].ships.forEach((sh, i) => {
+      (["a", "b"] as Side[]).filter((side) => !online || side === myS).forEach((side) => s[side].ships.forEach((sh, i) => {
         if (!sh.alive || sh.burn <= 0 || busy.current[`${side}${i}`]) return;
         queue.current = queue.current.then(async () => {
           if (overRef.current || !layer.current) return;
@@ -424,6 +475,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
             onBurn: (e) => { float(e.side, e.ship, `حرق −${e.dmg}`, "dmg"); damage(e.side, e.ship, e.dmg); },
           });
           commitView((n) => { const t = n[side].ships[i]!; if (t.alive) t.burn = Math.max(0, t.burn - 1); });
+          if (online && side === myS) session.current?.send({ t: "burn", side, ship: i, dmg: CFG.burnDamage, burnLeft: Math.max(0, live.current[side].ships[i]!.burn) });
           syncAuras();
         });
       }));
@@ -438,7 +490,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     onHitStop: (ms: number) => { top.current?.pause(ms); bottom.current?.pause(ms); },
     onRecoil: (weapon: string) => {
       const f = firing.current; if (!f) return;
-      const api = (f.side === "b" ? top : bottom).current;
+      const api = (f.side === foeS ? top : bottom).current;
       if (weapon === "cannon") api?.kick(f.ship, -0.035, 0);
       else if (weapon === "torpedo") api?.kick(f.ship, -0.015, 0.004);
       else api?.kick(f.ship, 0, 0.012);
@@ -449,7 +501,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     const c = forced ?? card;
     if (!c) return;
     setDropHot(null);
-    if (play("a", c, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
+    if (play(myS, c, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
     else { playSfx("hover", 0.4); if (manaRef.current.a < cardCost(c)) shout("طاقة غير كافية"); }
   };
   const onTargetRef = useRef(onTarget);
@@ -486,8 +538,8 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
       const t = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest("[data-bt-target]") as HTMLElement | null;
       if (t) { onTargetRef.current(t.dataset["side"] as Side, Number(t.dataset["ship"]), d.id); return; }
       // Generous drop: anywhere over the right sea picks the nearest living ship.
-      const side: Side = d.id === "shield" || d.id === "royal" ? "a" : "b";
-      const box = (side === "b" ? topBox : bottomBox).current, r = root.current;
+      const side: Side = d.id === "shield" || d.id === "royal" ? myS : foeS;
+      const box = (side === foeS ? topBox : bottomBox).current, r = root.current;
       if (!box || !r) return;
       const br = box.getBoundingClientRect(), rr = r.getBoundingClientRect();
       if (e.clientY < br.top - 30 || e.clientY > br.bottom + 30) return;
@@ -515,9 +567,9 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
     const p = point(i, s.spot, 1.05);
     const fx = shieldFx[`${side}${i}`];
     const base = point(i, s.spot, 0);
-    const targetable = s.alive && !over && card && (isShieldCard ? side === "a" && !s.shield : side === "b");
+    const targetable = s.alive && !over && card && (isShieldCard ? side === myS && !s.shield : side === foeS);
     const c = point(i, s.spot, 0.35);
-    const movable = side === "a" && s.alive && !over && !card && !s.frozen && !(s.lock > 0);
+    const movable = side === myS && s.alive && !over && !card && !s.frozen && !(s.lock > 0);
     return (
       <div key={i}>
         {s.alive && (
@@ -553,7 +605,7 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
             type="button"
             className="bt-move"
             style={{ left: c.x, top: c.y, width: hs.w * 1.1, height: hs.h * 1.4 }}
-            onClick={() => { commitView((n) => { const t = n.a.ships[i]!; t.spot = t.spot ? 0 : 1; }); playSfx("click", 0.4); }}
+            onClick={() => { const ns = s.spot ? 0 : 1; commitView((n) => { const t = n[side].ships[i]!; t.spot = ns; }); if (online && side === myS) session.current?.send({ t: "move", side, ship: i, spot: ns }); playSfx("click", 0.4); }}
             aria-label={`حرّك سفينتك ${i + 1}`}
           >
             <span>⇄</span>
@@ -568,20 +620,20 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
   return (
     <div className={overtime ? "bt-root bt-arena bt-overtime" : "bt-root bt-arena"} dir="rtl" ref={root} role="dialog" aria-label="ساحة المعركة">
       <header className="bt-top">
-        <SideBar p={foe} hp={hpSum(view, "b")} total={total} />
+        <SideBar p={foe} hp={hpSum(view, foeS)} total={total} />
         <div className="bt-round"><small>{lab ? "المختبر" : overtime ? "طاقة ×2" : "الوقت"}</small><b>{lab ? "∞" : `${mm}:${String(ss).padStart(2, "0")}`}</b></div>
-        <button type="button" className="tos-x bt-close" aria-label="انسحاب" onClick={onClose}><X className="h-4 w-4" /></button>
+        <button type="button" className="tos-x bt-close" aria-label="انسحاب" onClick={() => { if (online) session.current?.send({ t: "leave" }); onClose(); }}><X className="h-4 w-4" /></button>
       </header>
       <div className="bt-seas" ref={seas}>
         <div className="bt-panel bt-panel-foe" ref={topBox}>
-          <BattleSea ref={top} theme={foeWorld} ships={view.b.ships} hull={hull} mirrored stormy>{overlay("b")}</BattleSea>
-          <span className="bt-tag">{foe.name} <Bot className="h-3 w-3" /> <em>⚡{Math.floor(mana.b)}</em></span>
+          <BattleSea ref={top} theme={foeWorld} ships={view[foeS].ships} hull={hull} mirrored stormy>{overlay(foeS)}</BattleSea>
+          <span className="bt-tag">{foe.name} {!online && <Bot className="h-3 w-3" />} <em>⚡{Math.floor(online ? foeMana : mana[foeS])}</em></span>
         </div>
         <div className="bt-divider">
           <span className="bt-turn me">{over ? "انتهت المعركة" : card ? (isShieldCard ? "اسحب الدرع على سفينتك" : "اسحب البطاقة على سفينة العدو!") : "اسحب بطاقة أو اخترها"}</span>
         </div>
         <div className="bt-panel bt-panel-me" ref={bottomBox}>
-          <BattleSea ref={bottom} theme={myWorld} ships={view.a.ships} hull={hull} stormy>{overlay("a")}</BattleSea>
+          <BattleSea ref={bottom} theme={myWorld} ships={view[myS].ships} hull={hull} stormy>{overlay(myS)}</BattleSea>
           <span className="bt-tag">{me.name}</span>
         </div>
       </div>
@@ -592,20 +644,20 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
 
       {!over && (
         <footer className="bt-deck">
-          <div className="bt-mana" aria-label={`الطاقة ${Math.floor(mana.a)} من ${MANA_MAX}`}>
+          <div className="bt-mana" aria-label={`الطاقة ${Math.floor(mana[myS])} من ${MANA_MAX}`}>
             <Zap className="bt-mana-ico" />
             <div className="bt-mana-track">
-              <i style={{ width: `${(mana.a / MANA_MAX) * 100}%` }} />
+              <i style={{ width: `${(mana[myS] / MANA_MAX) * 100}%` }} />
               {Array.from({ length: MANA_MAX - 1 }, (_, k) => <s key={k} style={{ left: `${((k + 1) / MANA_MAX) * 100}%` }} />)}
             </div>
-            <b>{Math.floor(mana.a)}</b>
+            <b>{Math.floor(mana[myS])}</b>
           </div>
           <div className="bt-cards">
             {CARDS.map((c) => {
               const isShield = c.id === "shield" || c.id === "royal";
-              const noShip = !isShield && gunner("a", c.id) < 0 && !view.a.ships.some((s) => s.alive && s.weapons.some((w) => w.id === c.id));
-              const outOfShields = isShield && !lab && shieldsLeft.current.a <= 0;
-              const ready = mana.a >= c.cost && !noShip && !outOfShields;
+              const noShip = !isShield && gunner(myS, c.id) < 0 && !view[myS].ships.some((s) => s.alive && s.weapons.some((w) => w.id === c.id));
+              const outOfShields = isShield && !lab && shieldsLeft.current[myS] <= 0;
+              const ready = mana[myS] >= c.cost && !noShip && !outOfShields;
               return (
                 <button
                   key={c.id}
@@ -620,20 +672,20 @@ function Arena({ me, foe, seed, onClose, lab }: { me: Player; foe: Player; seed:
                   <span className="bt-card-art" aria-hidden="true"><img src={c.art} alt="" width={1024} height={1024} loading="lazy" draggable={false} /></span>
                   <strong>{c.name}</strong>
                   <small>{outOfShields ? "نفدت" : c.note}</small>
-                  {!ready && !noShip && !outOfShields && <i className="bt-card-fill" style={{ height: `${100 - Math.min(100, (mana.a / c.cost) * 100)}%` }} />}
+                  {!ready && !noShip && !outOfShields && <i className="bt-card-fill" style={{ height: `${100 - Math.min(100, (mana[myS] / c.cost) * 100)}%` }} />}
                 </button>
               );
             })}
           </div>
-          {!lab && <p className="bt-hint">دروعك المتبقية: {shieldsLeft.current.a} — {overtime ? "الطاقة تتدفق بسرعة مضاعفة!" : "الطاقة تمتلئ تلقائياً"}</p>}
+          {!lab && <p className="bt-hint">دروعك المتبقية: {shieldsLeft.current[myS]} — {overtime ? "الطاقة تتدفق بسرعة مضاعفة!" : online ? "معركة حيّة ضد قبطان حقيقي" : "الطاقة تمتلئ تلقائياً"}</p>}
         </footer>
       )}
 
       {over && (
         <div className="bt-result" role="status">
-          <h2 className={over === "a" ? "win" : ""}>{over === "a" ? "انتصار!" : over === "b" ? "هزيمة" : "تعادل"}</h2>
-          <p>{hpSum(view, "a")} ضد {hpSum(view, "b")} نقطة صمود</p>
-          <button type="button" className="tos-btn" onClick={onClose}>العودة للبحر</button>
+          <h2 className={over === myS ? "win" : ""}>{over === myS ? "انتصار!" : over === foeS ? "هزيمة" : "تعادل"}</h2>
+          <p>{hpSum(view, myS)} ضد {hpSum(view, foeS)} نقطة صمود</p>
+          <button type="button" className="tos-btn" onClick={() => { if (online) session.current?.send({ t: "leave" }); onClose(); }}>العودة للبحر</button>
         </div>
       )}
     </div>
