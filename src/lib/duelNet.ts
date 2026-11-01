@@ -73,7 +73,7 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
   const chanRef = useRef<RealtimeChannel | null>(null);
   const meRef = useRef(me);
   meRef.current = me;
-  const pending = useRef<{ matchId: string; resolve: (v: "accepted" | "declined" | "timeout") => void; timer: number } | null>(null);
+  const pending = useRef<{ matchId: string; resolve: (v: { matchId: string } | "declined" | "timeout") => void; timer: number } | null>(null);
 
   useEffect(() => {
     if (!me) return;
@@ -105,7 +105,7 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
         window.clearTimeout(pend.timer);
         pending.current = null;
         setOutgoing(null);
-        pend.resolve("accepted");
+        pend.resolve({ matchId: p.matchId });
       }
     });
 
@@ -149,9 +149,9 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queueing]);
 
-  /** Challenge a captain; resolves when they accept, decline or time out. */
+  /** Challenge a captain; resolves with the matchId when they accept, else declined/timeout. */
   const challenge = (peer: LobbyMeta) =>
-    new Promise<"accepted" | "declined" | "timeout">((resolve) => {
+    new Promise<{ matchId: string } | "declined" | "timeout">((resolve) => {
       const chan = chanRef.current, m = meRef.current;
       if (!chan || !m) { resolve("timeout"); return; }
       const matchId = crypto.randomUUID();
