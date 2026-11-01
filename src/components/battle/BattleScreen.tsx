@@ -422,13 +422,16 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
       shieldState(side, target, "spawn");
       float(side, target, "درع!", "block");
       playSfx("click", 0.6);
+      if (online && side === myS) session.current?.send({ t: "shield", side, ship: target, tier, cost });
       return true;
     }
     const g = gunner(side, id);
     const t = live.current[other(side)].ships[target];
     if (g < 0 || !t?.alive) return false;
     m[side] -= cost; setMana({ ...m });
-    fire(strike(side, g, id, target));
+    const ev = strike(side, g, id, target);
+    fire(ev);
+    if (online && side === myS) session.current?.send({ t: "fire", ev, cost });
     return true;
   };
 
@@ -498,7 +501,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
     const c = forced ?? card;
     if (!c) return;
     setDropHot(null);
-    if (play("a", c, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
+    if (play(myS, c, i)) { playSfx("click", 0.7); if (!labRef.current) setCard(null); }
     else { playSfx("hover", 0.4); if (manaRef.current.a < cardCost(c)) shout("طاقة غير كافية"); }
   };
   const onTargetRef = useRef(onTarget);
@@ -535,7 +538,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
       const t = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest("[data-bt-target]") as HTMLElement | null;
       if (t) { onTargetRef.current(t.dataset["side"] as Side, Number(t.dataset["ship"]), d.id); return; }
       // Generous drop: anywhere over the right sea picks the nearest living ship.
-      const side: Side = d.id === "shield" || d.id === "royal" ? "a" : "b";
+      const side: Side = d.id === "shield" || d.id === "royal" ? myS : foeS;
       const box = (side === "b" ? topBox : bottomBox).current, r = root.current;
       if (!box || !r) return;
       const br = box.getBoundingClientRect(), rr = r.getBoundingClientRect();
