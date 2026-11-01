@@ -286,7 +286,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
     top.current?.pause(320); bottom.current?.pause(320);
     flash.current?.animate([{ opacity: 0.85 }, { opacity: 0 }], { duration: 500 });
     root.current?.animate([{ transform: "translate(9px,-5px)" }, { transform: "translate(-8px,4px)" }, { transform: "translate(4px,2px)" }, { transform: "none" }], { duration: 600 });
-    shout(side === "b" ? "سفينة العدو غرقت!" : "سفينتك تغرق!");
+    shout(side === foeS ? "سفينة العدو غرقت!" : "سفينتك تغرق!");
     playSfx("click", 1);
     window.setTimeout(() => playSfx("click", 0.7), 280);
   };
@@ -374,7 +374,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
               }
             } else {
               if (e.weapon !== "missile") float(h.side, h.ship, h.kind === "splash" ? `شظايا −${h.dmg}` : `−${h.dmg}`, h.dmg >= 36 ? "crit" : "dmg");
-              (h.side === "b" ? top : bottom).current?.kick(h.ship, 0.02, 0.008);
+              (h.side === foeS ? top : bottom).current?.kick(h.ship, 0.02, 0.008);
               // Statuses land at impact: fire sets the ship ablaze, ice freezes it, the harpoon pins it; a shattering blow cracks the ice.
               const tag = (t: string) => h.tags?.includes(t);
               commitView((n) => {
@@ -490,7 +490,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
     onHitStop: (ms: number) => { top.current?.pause(ms); bottom.current?.pause(ms); },
     onRecoil: (weapon: string) => {
       const f = firing.current; if (!f) return;
-      const api = (f.side === "b" ? top : bottom).current;
+      const api = (f.side === foeS ? top : bottom).current;
       if (weapon === "cannon") api?.kick(f.ship, -0.035, 0);
       else if (weapon === "torpedo") api?.kick(f.ship, -0.015, 0.004);
       else api?.kick(f.ship, 0, 0.012);
@@ -650,13 +650,13 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
               <i style={{ width: `${(mana.a / MANA_MAX) * 100}%` }} />
               {Array.from({ length: MANA_MAX - 1 }, (_, k) => <s key={k} style={{ left: `${((k + 1) / MANA_MAX) * 100}%` }} />)}
             </div>
-            <b>{Math.floor(mana.a)}</b>
+            <b>{Math.floor(mana[myS])}</b>
           </div>
           <div className="bt-cards">
             {CARDS.map((c) => {
               const isShield = c.id === "shield" || c.id === "royal";
-              const noShip = !isShield && gunner("a", c.id) < 0 && !view.a.ships.some((s) => s.alive && s.weapons.some((w) => w.id === c.id));
-              const outOfShields = isShield && !lab && shieldsLeft.current.a <= 0;
+              const noShip = !isShield && gunner(myS, c.id) < 0 && !view[myS].ships.some((s) => s.alive && s.weapons.some((w) => w.id === c.id));
+              const outOfShields = isShield && !lab && shieldsLeft.current[myS] <= 0;
               const ready = mana.a >= c.cost && !noShip && !outOfShields;
               return (
                 <button
@@ -672,20 +672,20 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
                   <span className="bt-card-art" aria-hidden="true"><img src={c.art} alt="" width={1024} height={1024} loading="lazy" draggable={false} /></span>
                   <strong>{c.name}</strong>
                   <small>{outOfShields ? "نفدت" : c.note}</small>
-                  {!ready && !noShip && !outOfShields && <i className="bt-card-fill" style={{ height: `${100 - Math.min(100, (mana.a / c.cost) * 100)}%` }} />}
+                  {!ready && !noShip && !outOfShields && <i className="bt-card-fill" style={{ height: `${100 - Math.min(100, (mana[myS] / c.cost) * 100)}%` }} />}
                 </button>
               );
             })}
           </div>
-          {!lab && <p className="bt-hint">دروعك المتبقية: {shieldsLeft.current.a} — {overtime ? "الطاقة تتدفق بسرعة مضاعفة!" : "الطاقة تمتلئ تلقائياً"}</p>}
+          {!lab && <p className="bt-hint">دروعك المتبقية: {shieldsLeft.current[myS]} — {overtime ? "الطاقة تتدفق بسرعة مضاعفة!" : online ? "معركة حيّة ضد قبطان حقيقي" : "الطاقة تمتلئ تلقائياً"}</p>}
         </footer>
       )}
 
       {over && (
         <div className="bt-result" role="status">
-          <h2 className={over === "a" ? "win" : ""}>{over === "a" ? "انتصار!" : over === "b" ? "هزيمة" : "تعادل"}</h2>
-          <p>{hpSum(view, "a")} ضد {hpSum(view, "b")} نقطة صمود</p>
-          <button type="button" className="tos-btn" onClick={onClose}>العودة للبحر</button>
+          <h2 className={over === myS ? "win" : ""}>{over === myS ? "انتصار!" : over === foeS ? "هزيمة" : "تعادل"}</h2>
+          <p>{hpSum(view, myS)} ضد {hpSum(view, foeS)} نقطة صمود</p>
+          <button type="button" className="tos-btn" onClick={() => { if (online) session.current?.send({ t: "leave" }); onClose(); }}>العودة للبحر</button>
         </div>
       )}
     </div>
