@@ -224,8 +224,8 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
 
   const at = (side: Side, ship: number, spot: number, lift: number) => {
     const r = root.current!.getBoundingClientRect();
-    const p = (side === "b" ? topBox : bottomBox).current!.getBoundingClientRect();
-    const q = (side === "b" ? top : bottom).current!.point(ship, spot, lift);
+    const p = (side === foeS ? topBox : bottomBox).current!.getBoundingClientRect();
+    const q = (side === foeS ? top : bottom).current!.point(ship, spot, lift);
     return { x: p.left - r.left + q.x, y: p.top - r.top + q.y };
   };
 
@@ -539,7 +539,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
       if (t) { onTargetRef.current(t.dataset["side"] as Side, Number(t.dataset["ship"]), d.id); return; }
       // Generous drop: anywhere over the right sea picks the nearest living ship.
       const side: Side = d.id === "shield" || d.id === "royal" ? myS : foeS;
-      const box = (side === "b" ? topBox : bottomBox).current, r = root.current;
+      const box = (side === foeS ? topBox : bottomBox).current, r = root.current;
       if (!box || !r) return;
       const br = box.getBoundingClientRect(), rr = r.getBoundingClientRect();
       if (e.clientY < br.top - 30 || e.clientY > br.bottom + 30) return;
@@ -644,10 +644,10 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
 
       {!over && (
         <footer className="bt-deck">
-          <div className="bt-mana" aria-label={`الطاقة ${Math.floor(mana.a)} من ${MANA_MAX}`}>
+          <div className="bt-mana" aria-label={`الطاقة ${Math.floor(mana[myS])} من ${MANA_MAX}`}>
             <Zap className="bt-mana-ico" />
             <div className="bt-mana-track">
-              <i style={{ width: `${(mana.a / MANA_MAX) * 100}%` }} />
+              <i style={{ width: `${(mana[myS] / MANA_MAX) * 100}%` }} />
               {Array.from({ length: MANA_MAX - 1 }, (_, k) => <s key={k} style={{ left: `${((k + 1) / MANA_MAX) * 100}%` }} />)}
             </div>
             <b>{Math.floor(mana[myS])}</b>
@@ -657,7 +657,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
               const isShield = c.id === "shield" || c.id === "royal";
               const noShip = !isShield && gunner(myS, c.id) < 0 && !view[myS].ships.some((s) => s.alive && s.weapons.some((w) => w.id === c.id));
               const outOfShields = isShield && !lab && shieldsLeft.current[myS] <= 0;
-              const ready = mana.a >= c.cost && !noShip && !outOfShields;
+              const ready = mana[myS] >= c.cost && !noShip && !outOfShields;
               return (
                 <button
                   key={c.id}
