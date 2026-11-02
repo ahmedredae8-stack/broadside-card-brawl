@@ -15,6 +15,6 @@ alter table public.ai_access_requests enable row level security;
 create policy "anyone submits pending request" on public.ai_access_requests for insert to anon, authenticated
   with check (status = 'pending' and reviewed_by is null);
 create policy "admins read requests" on public.ai_access_requests for select to authenticated
-  using (public.has_role(auth.uid(), 'admin'));
+  using (exists (select 1 from public.user_roles r where r.user_id = auth.uid() and r.role = 'admin'));
 create policy "admins review requests" on public.ai_access_requests for update to authenticated
-  using (public.has_role(auth.uid(), 'admin')) with check (public.has_role(auth.uid(), 'admin'));
+  using (exists (select 1 from public.user_roles r where r.user_id = auth.uid() and r.role = 'admin')) with check (exists (select 1 from public.user_roles r where r.user_id = auth.uid() and r.role = 'admin'));
