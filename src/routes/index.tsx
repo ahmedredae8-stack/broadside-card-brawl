@@ -80,6 +80,8 @@ function Index() {
   const [win, setWin] = useState<Win>(null);
   const [profile, setProfile] = useState<import("@/lib/player").Player | null>(null);
   const [foe, setFoe] = useState<import("@/lib/player").Player | null>(null);
+  const [duel, setDuel] = useState<{ matchId: string; role: "host" | "guest" } | null>(null);
+  const startDuel = (f: import("@/lib/player").Player, matchId: string, role: "host" | "guest") => { setWin(null); setProfile(null); setDuel({ matchId, role }); setFoe(f); };
   const [chatPeer, setChatPeer] = useState<import("@/lib/player").Player | null>(null);
   const [phase, setPhase] = useState(currentPhase());
 
@@ -220,12 +222,12 @@ function Index() {
           <ChatPage key={chatPeer?.id ?? "none"} peer={chatPeer} />
         </GameWindow>
       )}
-      {win === "stats" && <GameWindow title="سجل القباطنة" size="lg" onClose={() => setWin(null)}><RankingsWindow onPick={(p) => { setWin(null); setProfile(p); }} /></GameWindow>}
+      {win === "stats" && <GameWindow title="سجل القباطنة" size="lg" onClose={() => setWin(null)}><RankingsWindow me={player} onDuel={startDuel} onPick={(p) => { setWin(null); setProfile(p); }} /></GameWindow>}
       {profile && !foe && <PirateProfile player={profile} isMe={profile.id === player?.id} onClose={() => setProfile(null)} onMessage={() => { setChatPeer(profile); setProfile(null); setWin("chat"); }} onAttack={() => { if (player) setFoe(profile); }} />}
-      {foe && player && <BattleScreen me={player} foe={foe} onClose={() => { setFoe(null); setProfile(null); }} />}
+      {foe && player && <BattleScreen me={player} foe={foe} {...(duel ? { online: duel } : {})} onClose={() => { setFoe(null); setDuel(null); setProfile(null); }} />}
       {win === "bag" && <GameWindow title="مخزن العتاد" size="lg" onClose={() => setWin(null)}><InventoryWindow player={player} /></GameWindow>}
       {win === "alerts" && <GameWindow title="التنبيهات" size="lg" onClose={() => setWin(null)}><AlertsWindow /></GameWindow>}
-      {win === "enemies" && <GameWindow title="البحث عن القراصنة" hint="ابحث عن قرصان واضغط لعرض ملفه" size="lg" onClose={() => setWin(null)}><RankingsWindow onPick={(p) => { setWin(null); setProfile(p); }} /></GameWindow>}
+      {win === "enemies" && <GameWindow title="البحث عن القراصنة" hint="ابحث عن قرصان واضغط لعرض ملفه" size="lg" onClose={() => setWin(null)}><RankingsWindow me={player} onDuel={startDuel} onPick={(p) => { setWin(null); setProfile(p); }} /></GameWindow>}
        {win === "tribe" && <GameWindow title="القبيلة" size="xl" onClose={() => setWin(null)}><TribesPage /></GameWindow>}
       {win === "settings" && (
         <GameWindow title="الإعدادات" size="md" onClose={() => setWin(null)}>
