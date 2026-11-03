@@ -63,7 +63,7 @@ export function KingOfSeas({ playerName, onClose }: { playerName: string; onClos
       const pool = BOT_NAMES.filter((n) => !used.has(n));
       const add: Seat[] = [];
       for (let i = cur.length; i < want; i++) {
-        add.push({ id: `bot${i}`, name: pool[i % pool.length], isBot: true, color: BOT_COLORS[i % BOT_COLORS.length] });
+        add.push({ id: `bot${i}`, name: pool[i % pool.length] ?? `قبطان ${i}`, isBot: true, color: BOT_COLORS[i % BOT_COLORS.length] ?? "#2f7fc9" });
       }
       return [...cur, ...add];
     });
