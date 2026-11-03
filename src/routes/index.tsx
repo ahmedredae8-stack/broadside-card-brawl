@@ -28,6 +28,7 @@ import { ChatPage } from "@/routes/chat";
 import { SettingsPage } from "@/routes/settings";
 import { PirateProfile } from "@/components/battle/PirateProfile";
 import { BattleScreen } from "@/components/battle/BattleScreen";
+import { KingOfSeas, KingOfSeasButton } from "@/components/royale/KingOfSeas";
 import {
   currentPhase,
   defaultTheme,
@@ -76,6 +77,7 @@ function Index() {
   const [intro, setIntro] = useState(true);
   const [themeId, setThemeId] = useState(defaultTheme.id);
   const [shopOpen, setShopOpen] = useState(false);
+  const [royale, setRoyale] = useState(false);
   const [questsOpen, setQuestsOpen] = useState(false);
   const [win, setWin] = useState<Win>(null);
   const [profile, setProfile] = useState<import("@/lib/player").Player | null>(null);
@@ -207,7 +209,9 @@ function Index() {
         </button>
       </div>
 
+      <KingOfSeasButton onClick={() => setRoyale(true)} />
       <BottomDock onAction={handleDockAction} />
+      {royale && <KingOfSeas playerName={player?.name ?? "القبطان"} onClose={() => setRoyale(false)} />}
 
        {shopOpen && <GameStore activeId={themeId} onSelect={selectTheme} onClose={() => setShopOpen(false)} />}
 
