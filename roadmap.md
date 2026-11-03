@@ -28,3 +28,5 @@
 - [x] Wire live duel challenge → arena; lobby styles
 - [x] Admin review of AI database access requests (SQL in supabase/migrations must be applied to the DB)
 - [~] Ship art: 10 tier flagships in public/ships/tiers (T01–T10); remaining 60 variants + sequential-unlock shop wiring pending
+
+- [ ] King of Seas: real live lobby with player accept/decline/hand-to-AI (after royale battle polish)

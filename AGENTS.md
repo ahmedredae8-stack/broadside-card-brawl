@@ -19,3 +19,4 @@
 - Scope social windows to the fixed stage and shared HUD tokens; viewport-sized children must not overflow embedded windows.
 - Battle arena resolves its own real-time card events; keep `src/game/duel.js` byte-identical to the weapon pack, and wire weapon FX only through `playFireEvent`/`syncIce`/`syncPin` with a `shipCenter` ctx — never edit `*Fx.js`.
 - Battle cards drag by pointer events (touch + mouse) onto `data-bt-target` ships; HTML5 DnD is not used because it does not work on touch.
+- King of Seas royale is a standalone three.js HTML game served as a CDN asset in an iframe, patched by /tmp-style script before upload; the React lobby (10s countdown, AI bot fill) wraps it because the file exceeds the repo size limit.
