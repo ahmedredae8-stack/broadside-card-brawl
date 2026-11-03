@@ -3217,3 +3217,25 @@
 @keyframes duel-pulse { 50% { box-shadow: 0 0 18px color-mix(in oklab, var(--tos-gold) 70%, transparent); } }
 .ai-req { display: grid; gap: .35rem; padding: .7rem; border-radius: .9rem; border: 1px solid color-mix(in oklab, var(--tos-gold) 45%, transparent); }
 .ai-req-actions { display: flex; gap: .5rem; }
+
+/* ===== King of Seas (royale) ===== */
+.kos-gold-btn{position:absolute;z-index:30;left:50%;transform:translateX(-50%);bottom:calc(var(--dock-h,96px) + 14px);display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:999px;font-weight:900;font-size:18px;letter-spacing:.5px;color:#2a1a02;background:linear-gradient(180deg,#fff1b8 0%,#f2c75c 45%,#b9831f 100%);border:2px solid #fff3c9;box-shadow:0 0 0 3px rgba(80,50,6,.65),0 8px 22px rgba(0,0,0,.55),0 0 26px rgba(242,199,92,.55);animation:kosPulse 2.2s ease-in-out infinite;cursor:pointer}
+.kos-gold-btn:active{transform:translateX(-50%) scale(.95)}
+@keyframes kosPulse{50%{box-shadow:0 0 0 3px rgba(80,50,6,.65),0 8px 22px rgba(0,0,0,.55),0 0 44px rgba(255,214,110,.9)}}
+.kos-root{position:fixed;inset:0;z-index:200;background:radial-gradient(ellipse at top,#12324a,#050d14 70%);color:#f6ead0;display:grid;place-items:center}
+.kos-lobby{width:min(720px,94vw);max-height:94vh;overflow:auto;padding:22px;border:1px solid rgba(232,182,76,.5);border-radius:14px;background:linear-gradient(180deg,rgba(14,32,46,.95),rgba(6,15,24,.95));box-shadow:0 24px 70px rgba(0,0,0,.6)}
+.kos-head{text-align:center}.kos-head h2{margin:0;font-size:32px;font-weight:900;background:linear-gradient(180deg,#fff1b8,#d6a23a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.kos-head p{margin:4px 0 0;font-size:13px;opacity:.75}
+.kos-count{display:flex;flex-direction:column-reverse;align-items:center;margin:14px 0}.kos-count span{font-size:56px;font-weight:900;line-height:1;color:#ffe39a;text-shadow:0 0 18px rgba(232,182,76,.6)}.kos-count small{opacity:.7}
+.kos-seats{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.kos-seats li{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);min-height:112px;justify-content:center;text-align:center;animation:kosIn .35s ease-out}
+.kos-seats li.me{border-color:#e8b64c;box-shadow:0 0 14px rgba(232,182,76,.35)}
+.kos-seats li.empty{border-style:dashed;opacity:.5}
+.kos-seats b{font-size:12px}.kos-seats em{font-style:normal;font-size:10px;opacity:.65}
+.kos-avatar{width:46px;height:46px;color:#e9dcc0}
+@keyframes kosIn{from{opacity:0;transform:scale(.85)}}
+.kos-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:13px}
+.kos-ghost{padding:8px 16px;border-radius:8px;border:1px solid rgba(232,182,76,.55);background:transparent;color:#ffe39a;font-weight:700;cursor:pointer}
+.kos-frame{position:absolute;inset:0;width:100%;height:100%;border:0}
+.kos-exit{position:absolute;top:max(10px,env(safe-area-inset-top));right:12px;z-index:2;display:flex;gap:6px;align-items:center;padding:6px 12px;border-radius:8px;border:1px solid rgba(232,182,76,.6);background:rgba(6,15,24,.85);color:#ffe39a;font-weight:700;cursor:pointer}
+@media (max-width:560px){.kos-seats{grid-template-columns:repeat(2,1fr)}}
