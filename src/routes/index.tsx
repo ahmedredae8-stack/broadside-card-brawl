@@ -83,7 +83,8 @@ function Index() {
   const [profile, setProfile] = useState<import("@/lib/player").Player | null>(null);
   const [foe, setFoe] = useState<import("@/lib/player").Player | null>(null);
   const [duel, setDuel] = useState<{ matchId: string; role: "host" | "guest" } | null>(null);
-  const startDuel = (f: import("@/lib/player").Player, matchId: string, role: "host" | "guest") => { setWin(null); setProfile(null); setDuel({ matchId, role }); setFoe(f); };
+  // An empty matchId means the foe handed the duel to their AI captain: fight offline against a bot copy.
+  const startDuel = (f: import("@/lib/player").Player, matchId: string, role: "host" | "guest") => { setWin(null); setProfile(null); setDuel(matchId ? { matchId, role } : null); setFoe(f); };
   const [chatPeer, setChatPeer] = useState<import("@/lib/player").Player | null>(null);
   const [phase, setPhase] = useState(currentPhase());
 

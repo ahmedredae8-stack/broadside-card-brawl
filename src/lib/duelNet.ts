@@ -66,6 +66,18 @@ const CHALLENGE_TTL = 15_000;
  * Lobby presence + handshake. Active while the live-duels window is open.
  * `queueing` marks me as openly looking for a duel.
  */
+const BLOCK_KEY = "duel-blocked-captains";
+export const blockedIds = (): string[] => {
+  try { return JSON.parse(localStorage.getItem(BLOCK_KEY) ?? "[]") as string[]; } catch { return []; }
+};
+export const blockCaptain = (id: string) => {
+  const s = new Set(blockedIds()); s.add(id);
+  localStorage.setItem(BLOCK_KEY, JSON.stringify([...s]));
+};
+
+export type ChallengeResult = { matchId: string } | "declined" | "timeout" | "ai" | "blocked";
+export type Reply = "accept" | "decline" | "block" | "ai";
+
 export function useDuelLobby(me: Player | null, queueing: boolean) {
   const [others, setOthers] = useState<LobbyMeta[]>([]);
   const [incoming, setIncoming] = useState<Challenge | null>(null);
@@ -94,6 +106,10 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
     chan.on("broadcast", { event: "challenge" }, ({ payload }) => {
       const p = payload as { to: string; from: LobbyMeta; matchId: string };
       if (p.to !== me.id || p.from?.id === me.id) return;
+      if (blockedIds().includes(p.from.id)) {
+        void chan.send({ type: "broadcast", event: "decline", payload: { to: p.from.id, matchId: p.matchId, blocked: true } });
+        return;
+      }
       setIncoming((prev) => (prev && prev.until > Date.now() && prev.from.id === p.from.id ? prev : { matchId: p.matchId, from: p.from, until: Date.now() + CHALLENGE_TTL }));
     });
 
@@ -110,14 +126,14 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
     });
 
     chan.on("broadcast", { event: "decline" }, ({ payload }) => {
-      const p = payload as { to: string; matchId: string };
+      const p = payload as { to: string; matchId: string; ai?: boolean; blocked?: boolean };
       if (p.to !== me.id) return;
       const pend = pending.current;
       if (pend && pend.matchId === p.matchId) {
         window.clearTimeout(pend.timer);
         pending.current = null;
         setOutgoing(null);
-        pend.resolve("declined");
+        pend.resolve(p.ai ? "ai" : p.blocked ? "blocked" : "declined");
       }
     });
 
