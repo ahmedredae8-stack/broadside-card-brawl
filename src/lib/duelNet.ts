@@ -85,7 +85,7 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
   const chanRef = useRef<RealtimeChannel | null>(null);
   const meRef = useRef(me);
   meRef.current = me;
-  const pending = useRef<{ matchId: string; resolve: (v: { matchId: string } | "declined" | "timeout") => void; timer: number } | null>(null);
+  const pending = useRef<{ matchId: string; resolve: (v: ChallengeResult) => void; timer: number } | null>(null);
 
   useEffect(() => {
     if (!me) return;
@@ -167,7 +167,7 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
 
   /** Challenge a captain; resolves with the matchId when they accept, else declined/timeout. */
   const challenge = (peer: LobbyMeta) =>
-    new Promise<{ matchId: string } | "declined" | "timeout">((resolve) => {
+    new Promise<ChallengeResult>((resolve) => {
       const chan = chanRef.current, m = meRef.current;
       if (!chan || !m) { resolve("timeout"); return; }
       const matchId = crypto.randomUUID();
@@ -181,11 +181,14 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
     });
 
   /** Answer an incoming challenge. Returns match info when accepted. */
-  const respond = (c: Challenge, accept: boolean): { matchId: string; role: "host" | "guest"; foe: Player } | null => {
+  const respond = (c: Challenge, reply: Reply | boolean): { matchId: string; role: "host" | "guest"; foe: Player } | null => {
+    const r: Reply = reply === true ? "accept" : reply === false ? "decline" : reply;
     const chan = chanRef.current;
     setIncoming(null);
+    if (r === "block") blockCaptain(c.from.id);
     if (!chan) return null;
-    void chan.send({ type: "broadcast", event: accept ? "accept" : "decline", payload: { to: c.from.id, matchId: c.matchId } });
+    const accept = r === "accept";
+    void chan.send({ type: "broadcast", event: accept ? "accept" : "decline", payload: { to: c.from.id, matchId: c.matchId, ai: r === "ai", blocked: r === "block" } });
     return accept ? { matchId: c.matchId, role: "guest", foe: playerFromMeta(c.from) } : null;
   };
 
