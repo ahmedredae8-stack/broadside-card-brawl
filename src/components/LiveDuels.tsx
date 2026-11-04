@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Radio, Swords, X, Users, Check } from "lucide-react";
+import { Radio, Swords, X, Users, Check, Bot, Ban } from "lucide-react";
 import { playerFromMeta, useDuelLobby, type LobbyMeta } from "@/lib/duelNet";
 import { CaptainAvatar } from "@/components/GameSprite";
 import { playSfx } from "@/lib/sound";
@@ -12,6 +12,7 @@ export function LiveDuels({ me, onDuel }: { me: Player | null; onDuel: (foe: Pla
   const { others, incoming, outgoing, challenge, respond, cancelOutgoing } = useDuelLobby(me, queueing);
   const [asking, setAsking] = useState<string | null>(null);
   const [, setTick] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Keep the incoming-challenge countdown alive.
   useEffect(() => {
@@ -27,6 +28,8 @@ export function LiveDuels({ me, onDuel }: { me: Player | null; onDuel: (foe: Pla
     setAsking(null);
     if (r !== "timeout") playSfx("click", 0.8);
     if (typeof r === "object") onDuel(playerFromMeta(peer), r.matchId, "host");
+    else if (r === "ai") { setNotice(`${peer.name} سلّم القيادة لقبطانه الآلي — المعركة تبدأ`); window.setTimeout(() => onDuel(playerFromMeta(peer), "", "host"), 900); }
+    else setNotice(r === "declined" ? `${peer.name} رفض التحدي` : r === "blocked" ? `${peer.name} لا يقبل تحدياتك` : `${peer.name} لم يرد على التحدي`);
   };
 
   const accept = (c: NonNullable<typeof incoming>) => {
@@ -63,12 +66,23 @@ export function LiveDuels({ me, onDuel }: { me: Player | null; onDuel: (foe: Pla
         </div>
       )}
 
+      {notice && !outgoing && (
+        <div className="duel-banner" role="status">
+          <span>{notice}</span>
+          <button type="button" className="tos-x" aria-label="إغلاق" onClick={() => setNotice(null)}><X className="h-4 w-4" /></button>
+        </div>
+      )}
+
       {incoming && (
         <div className="duel-banner duel-banner-in" role="alert">
           <CaptainAvatar seed={incoming.from.avatar_index ?? 0} url={incoming.from.avatar_url} className="ranking-avatar" />
           <span><b>{incoming.from.name}</b> يتحداك! ({countdown})</span>
-          <button type="button" className="tos-btn" onClick={() => accept(incoming)}><Check className="h-4 w-4" />قبول</button>
-          <button type="button" className="tos-x" aria-label="رفض التحدي" onClick={() => respond(incoming, false)}><X className="h-4 w-4" /></button>
+          <div className="duel-replies">
+            <button type="button" className="tos-btn" onClick={() => accept(incoming)}><Check className="h-4 w-4" />العب</button>
+            <button type="button" className="tos-btn duel-ai" onClick={() => { playSfx("click", 0.6); respond(incoming, "ai"); }}><Bot className="h-4 w-4" />قبطاني الآلي</button>
+            <button type="button" className="tos-btn duel-no" onClick={() => respond(incoming, "decline")}><X className="h-4 w-4" />رفض</button>
+            <button type="button" className="tos-btn duel-block" onClick={() => respond(incoming, "block")}><Ban className="h-4 w-4" />رفض نهائي</button>
+          </div>
         </div>
       )}
 
