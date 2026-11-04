@@ -212,7 +212,7 @@ function Index() {
 
       <KingOfSeasButton onClick={() => setRoyale(true)} />
       <BottomDock onAction={handleDockAction} />
-      {royale && <KingOfSeas playerName={player?.name ?? "القبطان"} onClose={() => setRoyale(false)} />}
+      {royale && <KingOfSeas player={player} playerName={player?.name ?? "القبطان"} onClose={() => setRoyale(false)} />}
 
        {shopOpen && <GameStore activeId={themeId} onSelect={selectTheme} onClose={() => setShopOpen(false)} />}
 
