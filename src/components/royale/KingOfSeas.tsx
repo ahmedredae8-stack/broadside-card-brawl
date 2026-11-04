@@ -1,27 +1,41 @@
 import { useEffect, useRef, useState } from "react";
 import gameAsset from "@/assets/royale/king_of_seas.html.asset.json";
 import dragonAsset from "@/assets/royale/mountain_dragon.glb.asset.json";
+import crest from "@/assets/royale/kos-crest.png";
 import { playSfx } from "@/lib/sound";
+import { supabase } from "@/integrations/supabase/client";
+import { CaptainAvatar, nameSeed } from "@/components/GameSprite";
+import type { Player } from "@/lib/player";
 
 const LOBBY_SECONDS = 10;
 const SLOTS = 10;
+const LOBBY_CHANNEL = "royale-lobby";
 const BOT_NAMES = [
   "صقر الخلجان", "الحوت الأسود", "قاهر العواصف", "ذيب اليم", "سيف المرجان",
   "ريّس الموج", "نجم الشمال", "شبح الضباب", "عقاب الصخور", "رعد الأعماق", "ملاح الفجر",
 ];
-const BOT_COLORS = ["#c9412f", "#2f7fc9", "#3aa36b", "#a55fd0", "#d08a2f", "#2fb7b0", "#c92f7a", "#7a8a2f"];
 
-type Seat = { id: string; name: string; isBot: boolean; color: string };
+type Seat = { id: string; name: string; isBot: boolean; me?: boolean; avatar_index?: number; avatar_url?: string | null; joined: number };
 
-function Avatar({ seat }: { seat: Seat }) {
-  return (
-    <svg viewBox="0 0 64 64" className="kos-avatar" aria-hidden="true">
-      <circle cx="32" cy="32" r="30" fill={seat.color} opacity="0.35" />
-      <circle cx="32" cy="26" r="11" fill="currentColor" opacity="0.9" />
-      <path d="M12 56c3-11 11-16 20-16s17 5 20 16" fill="currentColor" opacity="0.9" />
-      <path d="M18 20c4-8 24-8 28 0l-2 3H20z" fill={seat.color} />
-    </svg>
-  );
+/**
+ * The game file is served by the asset CDN as a download with scripts disabled, so it can't run
+ * when loaded directly in a frame. We fetch its text during the countdown, bake the start settings
+ * in place of `location.search`, and open it from a local blob URL — scripts run and it opens instantly.
+ */
+let gamePromise: Promise<string> | null = null;
+function prepareGame(): Promise<string> {
+  if (!gamePromise) {
+    const dragon = new URL(dragonAsset.url, window.location.origin).href;
+    const search = `?autostart=1&dragon=${encodeURIComponent(dragon)}`;
+    gamePromise = fetch(gameAsset.url)
+      .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.text(); })
+      .then((html) => {
+        const patched = html.split("location.search").join(JSON.stringify(search));
+        return URL.createObjectURL(new Blob([patched], { type: "text/html" }));
+      })
+      .catch((e) => { gamePromise = null; throw e; });
+  }
+  return gamePromise;
 }
 
 export function KingOfSeasButton({ onClick }: { onClick: () => void }) {
@@ -29,74 +43,139 @@ export function KingOfSeasButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       className="kos-gold-btn"
-      onClick={() => { playSfx("click", 0.8); onClick(); }}
+      onPointerEnter={() => { void prepareGame().catch(() => undefined); }}
+      onClick={() => { playSfx("click", 0.8); void prepareGame().catch(() => undefined); onClick(); }}
       aria-label="ملك البحار"
     >
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
-        <path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z" />
-      </svg>
+      <img src={crest} alt="" width={256} height={256} draggable={false} />
       <span>ملك البحار</span>
     </button>
   );
 }
 
-export function KingOfSeas({ playerName, onClose }: { playerName: string; onClose: () => void }) {
-  const [left, setLeft] = useState(LOBBY_SECONDS);
-  const [seats, setSeats] = useState<Seat[]>(() => [
-    { id: "me", name: playerName || "القبطان", isBot: false, color: "#e8b64c" },
-  ]);
-  const [phase, setPhase] = useState<"lobby" | "game">("lobby");
-  const frame = useRef<HTMLIFrameElement>(null);
+export function KingOfSeas({ player, playerName, onClose }: { player?: Player | null; playerName: string; onClose: () => void }) {
+  const [now, setNow] = useState(() => Date.now());
+  const [joinedAt] = useState(() => Date.now());
+  const [humans, setHumans] = useState<Seat[]>([]);
+  const [bots, setBots] = useState<Seat[]>([]);
+  const [phase, setPhase] = useState<"lobby" | "loading" | "game" | "error">("lobby");
+  const [gameUrl, setGameUrl] = useState<string | null>(null);
+  const myId = useRef(player?.id ?? `guest-${Math.random().toString(36).slice(2, 9)}`).current;
+
+  const me: Seat = { id: myId, name: playerName || "القبطان", isBot: false, me: true, avatar_index: player?.avatar_index ?? nameSeed(playerName), avatar_url: player?.avatar_url ?? null, joined: joinedAt };
+
+  // Start preloading immediately.
+  useEffect(() => {
+    prepareGame().then(setGameUrl).catch(() => setGameUrl(null));
+  }, []);
+
+  // Shared waiting room: captains opening the lobby on other devices appear in real time.
+  useEffect(() => {
+    const chan = supabase.channel(LOBBY_CHANNEL, { config: { presence: { key: myId } } });
+    chan.on("presence", { event: "sync" }, () => {
+      const state = chan.presenceState() as Record<string, Seat[]>;
+      const list: Seat[] = [];
+      for (const [k, arr] of Object.entries(state)) {
+        const s = arr[arr.length - 1];
+        if (k !== myId && s && Date.now() - s.joined < (LOBBY_SECONDS + 5) * 1000) list.push({ ...s, me: false, isBot: false });
+      }
+      setHumans(list);
+    });
+    void chan.subscribe((st) => { if (st === "SUBSCRIBED") void chan.track(me); });
+    return () => { void supabase.removeChannel(chan); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myId]);
+
+  // Room clock: the earliest captain in the room sets the start time for everyone.
+  const roomStart = Math.min(joinedAt, ...humans.map((h) => h.joined));
+  const left = Math.max(0, Math.ceil((roomStart + LOBBY_SECONDS * 1000 - now) / 1000));
 
   useEffect(() => {
     if (phase !== "lobby") return;
-    const t = window.setInterval(() => setLeft((s) => s - 1), 1000);
+    const t = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(t);
   }, [phase]);
 
+  const realSeats = [me, ...humans].sort((a, b) => a.joined - b.joined).slice(0, SLOTS);
+
+  // AI captains fill empty seats as the clock runs down.
   useEffect(() => {
     if (phase !== "lobby") return;
-    setSeats((cur) => {
-      const want = left <= 2 ? SLOTS : Math.min(SLOTS - 1, cur.length + (Math.random() < 0.6 ? 1 : 0));
-      if (want <= cur.length) return cur;
-      const used = new Set(cur.map((s) => s.name));
-      const pool = BOT_NAMES.filter((n) => !used.has(n));
-      const add: Seat[] = [];
-      for (let i = cur.length; i < want; i++) {
-        add.push({ id: `bot${i}`, name: pool[i % pool.length] ?? `قبطان ${i}`, isBot: true, color: BOT_COLORS[i % BOT_COLORS.length] ?? "#2f7fc9" });
-      }
-      return [...cur, ...add];
-    });
-    if (left <= 0) {
-      playSfx("click", 1);
-      setPhase("game");
+    const free = SLOTS - realSeats.length;
+    const want = left <= 2 ? free : Math.min(free - 1, Math.floor(((LOBBY_SECONDS - left) / LOBBY_SECONDS) * free * 0.9));
+    if (want > bots.length) {
+      setBots((cur) => {
+        const used = new Set([...realSeats, ...cur].map((s) => s.name));
+        const pool = BOT_NAMES.filter((n) => !used.has(n));
+        const add: Seat[] = [];
+        for (let i = cur.length; i < want; i++) add.push({ id: `bot${i}`, name: pool[i - cur.length] ?? `قبطان ${i + 1}`, isBot: true, avatar_index: i * 3 + 1, joined: Date.now() });
+        if (add.length) playSfx("click", 0.35);
+        return [...cur, ...add];
+      });
     }
-  }, [left, phase]);
+    if (left <= 0) launch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [left, phase, realSeats.length]);
 
-  const src = `${gameAsset.url}?autostart=1&dragon=${encodeURIComponent(dragonAsset.url)}`;
+  const launch = () => {
+    playSfx("click", 1);
+    if (gameUrl) { setPhase("game"); return; }
+    setPhase("loading");
+    prepareGame().then((u) => { setGameUrl(u); setPhase("game"); }).catch(() => setPhase("error"));
+  };
+
+  const seats = [...realSeats, ...bots].slice(0, SLOTS);
+  const ring = 2 * Math.PI * 44;
 
   return (
     <div className="kos-root" role="dialog" aria-label="ملك البحار">
-      {phase === "lobby" ? (
+      {phase === "game" && gameUrl ? (
+        <>
+          <iframe className="kos-frame" src={gameUrl} title="ملك البحار" allow="autoplay; fullscreen" />
+          <button type="button" className="kos-exit" onClick={onClose} aria-label="الخروج من المعركة">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            خروج
+          </button>
+        </>
+      ) : (
         <div className="kos-lobby">
           <header className="kos-head">
+            <img src={crest} alt="" width={256} height={256} className="kos-head-crest" />
             <h2>ملك البحار</h2>
-            <p>معركة بحرية لعشرة قباطنة — آخر ثلاثة ينتقلون إلى جزيرة المصير</p>
+            <p>عشرة قباطنة في بحر واحد — آخر ثلاثة ينتقلون إلى جزيرة المصير</p>
           </header>
-          <div className="kos-count" aria-live="polite">
-            <span>{Math.max(0, left)}</span>
-            <small>تبدأ الحرب خلال</small>
+
+          <div className="kos-versus">
+            <div className="kos-hero">
+              <CaptainAvatar seed={me.avatar_index ?? 0} url={me.avatar_url} className="kos-hero-img" />
+              <b>{me.name}</b>
+              <em>قبطانك</em>
+            </div>
+            <div className="kos-clock" aria-live="polite">
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="44" className="kos-clock-bg" />
+                <circle cx="50" cy="50" r="44" className="kos-clock-fg" strokeDasharray={ring} strokeDashoffset={ring * (1 - left / LOBBY_SECONDS)} />
+              </svg>
+              <span>{phase === "loading" ? "…" : left}</span>
+              <small>{phase === "loading" ? "تجهيز البحر" : phase === "error" ? "تعذّر التحميل" : "تبدأ الحرب"}</small>
+            </div>
+            <div className="kos-hero kos-hero-foe">
+              <div className="kos-count-big">{seats.length}<small>/{SLOTS}</small></div>
+              <b>قباطنة في الردهة</b>
+              <em>{humans.length ? `${humans.length + 1} لاعبين حقيقيين` : "بانتظار المنضمين"}</em>
+            </div>
           </div>
+
           <ul className="kos-seats">
             {Array.from({ length: SLOTS }, (_, i) => {
               const s = seats[i];
               return (
-                <li key={i} className={s ? (s.isBot ? "bot" : "me") : "empty"}>
+                <li key={s?.id ?? `e${i}`} className={s ? (s.me ? "me" : s.isBot ? "bot" : "human") : "empty"}>
                   {s ? (
                     <>
-                      <Avatar seat={s} />
+                      <CaptainAvatar seed={s.avatar_index ?? i} url={s.avatar_url} className="kos-seat-img" />
                       <b>{s.name}</b>
-                      <em>{s.isBot ? "قبطان آلي" : "أنت"}</em>
+                      <em>{s.me ? "أنت" : s.isBot ? "قبطان آلي" : "لاعب"}</em>
                     </>
                   ) : (
                     <em>بانتظار قبطان…</em>
@@ -105,19 +184,14 @@ export function KingOfSeas({ playerName, onClose }: { playerName: string; onClos
               );
             })}
           </ul>
+
           <div className="kos-foot">
-            <span>{seats.length} / {SLOTS} قباطنة</span>
-            <button type="button" className="kos-ghost" onClick={onClose}>مغادرة الردهة</button>
+            <button type="button" className="kos-ghost" onClick={onClose}>مغادرة</button>
+            {phase === "error"
+              ? <button type="button" className="kos-go" onClick={launch}>إعادة المحاولة</button>
+              : <button type="button" className="kos-go" disabled={phase === "loading"} onClick={launch}>ابدأ الآن</button>}
           </div>
         </div>
-      ) : (
-        <>
-          <iframe ref={frame} className="kos-frame" src={src} title="ملك البحار" allow="autoplay; fullscreen" />
-          <button type="button" className="kos-exit" onClick={onClose} aria-label="الخروج من المعركة">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M6 6l12 12M18 6 6 18" /></svg>
-            خروج
-          </button>
-        </>
       )}
     </div>
   );
