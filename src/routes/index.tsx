@@ -29,7 +29,7 @@ import { SettingsPage } from "@/routes/settings";
 import { PirateProfile } from "@/components/battle/PirateProfile";
 import { BattleScreen } from "@/components/battle/BattleScreen";
 import { KingOfSeas, KingOfSeasButton, prepareGame } from "@/components/royale/KingOfSeas";
-import { useDuelLobby, metaOf } from "@/lib/duelNet";
+import { useDuelLobby } from "@/lib/duelNet";
 import { DuelRequests } from "@/components/DuelRequests";
 import { isDecoy } from "@/components/LiveDuels";
 import {
@@ -106,7 +106,6 @@ function Index() {
       window.setTimeout(() => { setDuelNotice(null); startDuel(target, "", "host"); }, 1400);
     }
   };
-  void metaOf;
   const [chatPeer, setChatPeer] = useState<import("@/lib/player").Player | null>(null);
   const [phase, setPhase] = useState(currentPhase());
 

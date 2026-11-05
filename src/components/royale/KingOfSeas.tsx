@@ -23,7 +23,7 @@ type Seat = { id: string; name: string; isBot: boolean; me?: boolean; avatar_ind
  * in place of `location.search`, and open it from a local blob URL — scripts run and it opens instantly.
  */
 let gamePromise: Promise<string> | null = null;
-function prepareGame(): Promise<string> {
+export function prepareGame(): Promise<string> {
   if (!gamePromise) {
     const dragon = new URL(dragonAsset.url, window.location.origin).href;
     const search = `?autostart=1&dragon=${encodeURIComponent(dragon)}`;
@@ -131,7 +131,7 @@ export function KingOfSeas({ player, playerName, onClose }: { player?: Player | 
     <div className="kos-root" role="dialog" aria-label="ملك البحار">
       {phase === "game" && gameUrl ? (
         <>
-          <iframe className="kos-frame" src={gameUrl} title="ملك البحار" allow="autoplay; fullscreen" />
+          <iframe className="kos-frame" src={gameUrl} title="ملك البحار" allow="autoplay; fullscreen" onLoad={(e) => { const w = e.currentTarget.contentWindow; [400, 1200, 2500].forEach((ms) => window.setTimeout(() => w?.postMessage({ type: "kos-start" }, "*"), ms)); }} />
           <button type="button" className="kos-exit" onClick={onClose} aria-label="الخروج من المعركة">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M6 6l12 12M18 6 6 18" /></svg>
             خروج
