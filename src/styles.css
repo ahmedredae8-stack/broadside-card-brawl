@@ -3255,9 +3255,11 @@
 .kos-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:13px}
 .kos-ghost{padding:8px 16px;border-radius:8px;border:1px solid rgba(232,182,76,.55);background:transparent;color:#ffe39a;font-weight:700;cursor:pointer}
 .kos-frame{position:absolute;inset:0;width:100%;height:100%;border:0}
-.kos-exit{position:absolute;top:max(10px,env(safe-area-inset-top));right:12px;z-index:2;display:flex;gap:6px;align-items:center;padding:6px 12px;border-radius:8px;border:1px solid rgba(232,182,76,.6);background:rgba(6,15,24,.85);color:#ffe39a;font-weight:700;cursor:pointer}
+.kos-exit{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));left:12px;z-index:2;display:flex;gap:6px;align-items:center;padding:6px 12px;border-radius:8px;border:1px solid rgba(232,182,76,.6);background:rgba(6,15,24,.85);color:#ffe39a;font-weight:700;cursor:pointer}
 @media (max-width:560px){.kos-seats{grid-template-columns:repeat(2,1fr)}}
 .duel-banner-in{flex-wrap:wrap}
 .duel-replies{display:flex;flex-wrap:wrap;gap:6px;width:100%;justify-content:flex-end}
 .duel-replies .tos-btn{padding:6px 10px;font-size:12px}
 .duel-replies .duel-no,.duel-replies .duel-block{filter:saturate(.4) brightness(.85)}
+.duel-requests{position:fixed;z-index:190;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(560px,94vw);display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+.duel-away{font-style:normal;font-size:11px;opacity:.6}

@@ -62,7 +62,10 @@ const SECURITY_HEADERS: Record<string, string> = {
     "font-src 'self' data: https:",
     "style-src 'self' 'unsafe-inline' https:",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
-    "connect-src 'self' https: wss:",
+    "connect-src 'self' https: wss: blob: data:",
+    // King of Seas runs from a locally built blob document inside an iframe.
+    "frame-src 'self' blob:",
+    "worker-src 'self' blob:",
     "upgrade-insecure-requests",
   ].join("; "),
 };
