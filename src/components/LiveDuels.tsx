@@ -1,112 +1,68 @@
-import { useEffect, useState } from "react";
-import { Radio, Swords, X, Users, Check, Bot, Ban } from "lucide-react";
-import { playerFromMeta, useDuelLobby, type LobbyMeta } from "@/lib/duelNet";
+import { useEffect, useMemo, useState } from "react";
+import { Swords, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { playerFromMeta, type LobbyMeta } from "@/lib/duelNet";
 import { CaptainAvatar } from "@/components/GameSprite";
-import { playSfx } from "@/lib/sound";
-import type { Player } from "@/lib/player";
-import { powerOf } from "@/components/battle/BattleScreen";
+import { isOnline, type Player } from "@/lib/player";
 
-/** Live-duel lobby: captains online right now, challenge / accept handshake, then the arena opens. */
-export function LiveDuels({ me, onDuel }: { me: Player | null; onDuel: (foe: Player, matchId: string, role: "host" | "guest") => void }) {
-  const [queueing, setQueueing] = useState(false);
-  const { others, incoming, outgoing, challenge, respond, cancelOutgoing } = useDuelLobby(me, queueing);
-  const [asking, setAsking] = useState<string | null>(null);
-  const [, setTick] = useState(0);
-  const [notice, setNotice] = useState<string | null>(null);
+/** Two always-active AI captains whose identities rotate, so the sea never looks empty. */
+const DECOY_NAMES = ["صقر الخلجان", "الحوت الأسود", "قاهر العواصف", "ذيب اليم", "سيف المرجان", "ريّس الموج", "نجم الشمال", "شبح الضباب", "عقاب الصخور", "رعد الأعماق", "ملاح الفجر", "سلطان الموج"];
+export const isDecoy = (id: string) => id.startsWith("decoy-");
+const ROTATE_MS = 45_000;
 
-  // Keep the incoming-challenge countdown alive.
+function decoys(slot: number): Player[] {
+  return [0, 1].map((i) => {
+    const n = (slot * 2 + i * 5) % DECOY_NAMES.length;
+    return { id: `decoy-${slot}-${i}`, name: DECOY_NAMES[n]!, theme_id: "", last_seen: new Date().toISOString(), created_at: "", avatar_index: n * 3 + 2, score: 800 + ((slot * 37 + i * 211) % 900) };
+  });
+}
+
+/** Every captain: live ones first, then the two active AI captains, then everyone else. Tap opens their dossier. */
+export function LiveDuels({ me, online, onPick }: { me: Player | null; online: LobbyMeta[]; onPick: (p: Player) => void }) {
+  const [all, setAll] = useState<Player[]>([]);
+  const [slot, setSlot] = useState(() => Math.floor(Date.now() / ROTATE_MS));
+
   useEffect(() => {
-    const id = window.setInterval(() => setTick((v) => v + 1), 500);
-    return () => window.clearInterval(id);
+    let alive = true;
+    void supabase.from("players").select("*").order("last_seen", { ascending: false }).limit(200).then(({ data }) => { if (alive) setAll((data ?? []) as Player[]); });
+    const t = window.setInterval(() => setSlot(Math.floor(Date.now() / ROTATE_MS)), 5_000);
+    return () => { alive = false; window.clearInterval(t); };
   }, []);
 
-  const sendChallenge = async (peer: LobbyMeta) => {
-    if (!me || asking) return;
-    setAsking(peer.id);
-    playSfx("click", 0.6);
-    const r = await challenge(peer);
-    setAsking(null);
-    if (r !== "timeout") playSfx("click", 0.8);
-    if (typeof r === "object") onDuel(playerFromMeta(peer), r.matchId, "host");
-    else if (r === "ai") { setNotice(`${peer.name} سلّم القيادة لقبطانه الآلي — المعركة تبدأ`); window.setTimeout(() => onDuel(playerFromMeta(peer), "", "host"), 900); }
-    else setNotice(r === "declined" ? `${peer.name} رفض التحدي` : r === "blocked" ? `${peer.name} لا يقبل تحدياتك` : `${peer.name} لم يرد على التحدي`);
-  };
+  const rows = useMemo(() => {
+    const liveIds = new Set(online.map((o) => o.id));
+    const live = online.filter((o) => o.id !== me?.id).map((o) => ({ p: playerFromMeta(o), tag: "live" as const }));
+    const bots = decoys(slot).map((p) => ({ p, tag: "active" as const }));
+    const rest = all.filter((p) => p.id !== me?.id && !liveIds.has(p.id)).map((p) => ({ p, tag: isOnline(p.last_seen) ? ("recent" as const) : ("away" as const) }));
+    return [...live, ...bots, ...rest];
+  }, [online, all, slot, me?.id]);
 
-  const accept = (c: NonNullable<typeof incoming>) => {
-    playSfx("click", 0.9);
-    const m = respond(c, true);
-    if (m) onDuel(m.foe, m.matchId, m.role);
-  };
-
-  const fresh = others.slice().sort((a, b) => Number(b.waiting) - Number(a.waiting) || a.name.localeCompare(b.name, "ar"));
-  const countdown = incoming ? Math.max(0, Math.ceil((incoming.until - Date.now()) / 1000)) : 0;
+  const label = { live: "متصل الآن", active: "نشط في البحر", recent: "شوهد مؤخراً", away: "غائب — يقاتل عنه قبطان آلي" };
 
   return (
     <div className="duel-live">
       <div className="duel-live-head">
         <div className="duel-live-note">
-          <strong>القباطنة في البحر الآن</strong>
-          <span>{fresh.length ? `${fresh.length} قبطان متصل — حدِّده لترسل له تحدياً` : "ابقَ في القائمة حتى يتحداك قبطان"}</span>
+          <strong>كل القباطنة</strong>
+          <span>اضغط على أي قبطان لتختار هجوم أو مراسلة — المتصلون يصلهم طلب القتال فوراً</span>
         </div>
-        <button
-          type="button"
-          className={queueing ? "tos-btn duel-queue on" : "tos-btn duel-queue"}
-          onClick={() => { setQueueing((v) => !v); playSfx("click", 0.5); }}
-        >
-          <Radio className="h-4 w-4" />
-          {queueing ? "أنت في قائمة التحدي" : "انضم لقائمة التحدي"}
-        </button>
       </div>
-
-      {outgoing && (
-        <div className="duel-banner" role="status">
-          <Swords className="h-4 w-4" />
-          <span>بانتظار موافقة {outgoing.to.name}…</span>
-          <button type="button" className="tos-x" aria-label="إلغاء التحدي" onClick={cancelOutgoing}><X className="h-4 w-4" /></button>
-        </div>
-      )}
-
-      {notice && !outgoing && (
-        <div className="duel-banner" role="status">
-          <span>{notice}</span>
-          <button type="button" className="tos-x" aria-label="إغلاق" onClick={() => setNotice(null)}><X className="h-4 w-4" /></button>
-        </div>
-      )}
-
-      {incoming && (
-        <div className="duel-banner duel-banner-in" role="alert">
-          <CaptainAvatar seed={incoming.from.avatar_index ?? 0} url={incoming.from.avatar_url} className="ranking-avatar" />
-          <span><b>{incoming.from.name}</b> يتحداك! ({countdown})</span>
-          <div className="duel-replies">
-            <button type="button" className="tos-btn" onClick={() => accept(incoming)}><Check className="h-4 w-4" />العب</button>
-            <button type="button" className="tos-btn duel-ai" onClick={() => { playSfx("click", 0.6); respond(incoming, "ai"); }}><Bot className="h-4 w-4" />قبطاني الآلي</button>
-            <button type="button" className="tos-btn duel-no" onClick={() => respond(incoming, "decline")}><X className="h-4 w-4" />رفض</button>
-            <button type="button" className="tos-btn duel-block" onClick={() => respond(incoming, "block")}><Ban className="h-4 w-4" />رفض نهائي</button>
-          </div>
-        </div>
-      )}
-
-      {fresh.length ? (
+      {rows.length ? (
         <ol className="ranking-list">
-          {fresh.map((p) => (
+          {rows.map(({ p, tag }) => (
             <li key={p.id}>
-              <button type="button" className="pirate-row" disabled={!!asking} onClick={() => void sendChallenge(p)}>
+              <button type="button" className="pirate-row" onClick={() => onPick(p)}>
                 <CaptainAvatar seed={p.avatar_index ?? 0} url={p.avatar_url} className="ranking-avatar" />
                 <strong>{p.name}</strong>
-                {p.waiting && <em className="duel-waiting">جاهز للتحدي</em>}
-                <span><Swords className="h-3.5 w-3.5" /> {asking === p.id ? "…يُرسل التحدي" : "تحدَّ"}</span>
+                <em className={tag === "live" || tag === "active" ? "duel-waiting" : "duel-away"}>{label[tag]}</em>
+                <span><Swords className="h-3.5 w-3.5" /> اختر</span>
               </button>
             </li>
           ))}
         </ol>
       ) : (
-        <div className="dock-empty">
-          <Users size={40} strokeWidth={1.4} />
-          <strong>لا يوجد قباطنة متصلون الآن</strong>
-          <span>افتح هذه النافذة على جهازين وسجّل دخول قبطانين لتتحاچما مباشرة.</span>
-        </div>
+        <div className="dock-empty"><Users size={40} strokeWidth={1.4} /><strong>جارٍ تحميل القباطنة…</strong></div>
       )}
-      <p className="duel-live-foot">المعركة الحيّة: كل ضربة ودرع وحركة تُبَثّ للخصم لحظياً — بلا قبطان آلي.</p>
     </div>
   );
 }
