@@ -145,11 +145,14 @@ export function KingOfSeas({ player, playerName, onClose }: { player?: Player | 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [left, phase, realSeats.length]);
 
+  const launched = useRef(false);
   const launch = () => {
+    if (launched.current) return;
+    launched.current = true;
     playSfx("click", 1);
     const list: RoyaleSeat[] = [...realSeats, ...bots].slice(0, SLOTS).map((s) => ({ name: s.name, isBot: s.isBot, me: !!s.me }));
     if (!ready) setPhase("loading");
-    prepareGame().then((html) => { setGameUrl(openGame(html, list)); setPhase("game"); }).catch(() => setPhase("error"));
+    prepareGame().then((html) => { setGameUrl(openGame(html, list)); setPhase("game"); }).catch(() => { launched.current = false; setPhase("error"); });
   };
 
   const seats = [...realSeats, ...bots].slice(0, SLOTS);

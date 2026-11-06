@@ -10,7 +10,6 @@ import { getTheme } from "@/lib/themes";
 
 type Ranking = "events" | "damage" | "fish" | "tribes" | "live";
 const boards = [
-  { id: "live" as const, label: "معارك مباشرة", icon: Radio },
   { id: "events" as const, label: "الفعاليات", icon: Trophy },
   { id: "damage" as const, label: "ملوك الضرر", icon: Swords },
   { id: "fish" as const, label: "ملوك الصيد", icon: Fish },
@@ -42,7 +41,7 @@ export function RankingsWindow({ onPick, me, online = [], initial = "events" }: 
     <label className="pirate-search"><Search size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث عن قرصان بالاسم…" aria-label="ابحث عن قرصان" /></label>
     {found ? (found.length ? <ol className="ranking-list">{found.map((p) => <li key={p.id}><button type="button" className="pirate-row" onClick={() => onPick?.(p)}><CaptainAvatar seed={p.avatar_index ?? 0} url={p.avatar_url} className="ranking-avatar" /><strong>{p.name}</strong><span>عرض الملف</span></button></li>)}</ol> : <EmptyState icon={Users} title="لا يوجد قرصان بهذا الاسم" detail="جرّب جزءًا آخر من الاسم." />) : <>
     <nav className="dock-tabs dock-tabs-wrap" aria-label="تصنيفات اللاعبين">{boards.map(({ id, label, icon: Icon }) => <Button key={id} variant="ghost" className={board === id ? "dock-tab active" : "dock-tab"} onClick={() => setBoard(id)}><Icon size={16} />{label}</Button>)}</nav>
-    {board === "live" ? <LiveDuels me={me ?? null} online={online} onPick={(p) => onPick?.(p)} /> : <><div className="dock-section-heading"><Trophy size={20} /><strong>{boards.find((item) => item.id === board)?.label}</strong></div>
+    {board === "events" || board === "live" ? <LiveDuels me={me ?? null} online={online} onPick={(p) => onPick?.(p)} /> : <><div className="dock-section-heading"><Trophy size={20} /><strong>{boards.find((item) => item.id === board)?.label}</strong></div>
     {board !== "events" ? <EmptyState icon={Trophy} title="لا توجد نتائج مسجلة بعد" detail="ستظهر المراتب عند توفر سجل المنافسة لهذا التصنيف." /> : loading ? <p className="dock-loading">جارٍ تحميل الترتيب…</p> : players.length ? <ol className="ranking-list">{players.map((player, i) => <li key={player.id} onClick={() => onPick?.(player as Player)} style={{ cursor: onPick ? "pointer" : undefined }}><b className="ranking-position">{String(i + 1).padStart(2, "0")}</b><CaptainAvatar seed={player.avatar_index ?? 0} url={(player as { avatar_url?: string | null }).avatar_url} className="ranking-avatar" /><strong>{player.name}</strong><span>{(player.score ?? 0).toLocaleString("ar")} نقطة</span></li>)}</ol> : <EmptyState icon={Trophy} title="لا يوجد لاعبون في الترتيب بعد" detail="تظهر النتائج بعد بدء اللعب." />}</>}
     </>}
   </div>;
