@@ -30,3 +30,7 @@
 - [~] Ship art: 10 tier flagships in public/ships/tiers (T01–T10); remaining 60 variants + sequential-unlock shop wiring pending
 
 - [ ] King of Seas: real live lobby with player accept/decline/hand-to-AI (after royale battle polish)
+- [x] Live-battles tab removed; Events list shows online captains first; attack sends a real request; settings toggle lets AI fight while away
+- [x] Online status fixed (last-seen heartbeat every 30s + live presence)
+- [x] King of Seas: dragon preloaded + arrives in ~1s, all lobby captains sail as ships with name plates, island at last 3, spectate/exit on defeat, gold panels
+- [ ] Offline captains opting out of AI fights needs a saved account setting (currently applies while the game is open in the background)
