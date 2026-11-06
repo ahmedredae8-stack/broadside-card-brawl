@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Radio, Search, Crown, Fish, Shield, Skull, Swords, Trophy, Users } from "lucide-react";
+import { Bell, Search, Crown, Fish, Shield, Skull, Swords, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { CaptainAvatar } from "@/components/GameSprite";
