@@ -110,6 +110,11 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
         void chan.send({ type: "broadcast", event: "decline", payload: { to: p.from.id, matchId: p.matchId, blocked: true } });
         return;
       }
+      // Away (tab hidden) and the captain allowed it in settings: their AI captain takes the fight.
+      if (typeof document !== "undefined" && document.hidden && localStorage.getItem("ib.autoAI") !== "off") {
+        void chan.send({ type: "broadcast", event: "decline", payload: { to: p.from.id, matchId: p.matchId, ai: true } });
+        return;
+      }
       setIncoming((prev) => (prev && prev.until > Date.now() && prev.from.id === p.from.id ? prev : { matchId: p.matchId, from: p.from, until: Date.now() + CHALLENGE_TTL }));
     });
 

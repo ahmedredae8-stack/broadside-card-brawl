@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bell, Camera, Gauge, LogOut, Music2, ShieldCheck, Sparkles, Vibrate, Waves } from "lucide-react";
+import { Bell, Bot, Camera, Gauge, LogOut, Music2, ShieldCheck, Sparkles, Vibrate, Waves } from "lucide-react";
 
 import { CaptainAvatar, nameSeed } from "@/components/GameSprite";
 import { CaptainGate } from "@/components/CaptainGate";
@@ -34,13 +34,14 @@ export function SettingsPage({ onOpenStudio }: { onOpenStudio?: () => void }) {
   const [quality, setQuality] = useState("high");
   const [vibrate, setVibrate] = useState(true);
   const [notify, setNotify] = useState(true);
+  const [autoAI, setAutoAI] = useState(true);
   const [admin, setAdmin] = useState(false);
   const [faces, setFaces] = useState(false);
   const [gate, setGate] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { void isArtworkAdmin().then(setAdmin).catch(() => setAdmin(false)); }, [player?.id]);
-  useEffect(() => { setSound(!isMuted()); setQuality(pref("ib.quality", "high")); setVibrate(pref("ib.vibrate", "on") === "on"); setNotify(pref("ib.notify", "on") === "on"); if (pref("ib.quality", "high") === "low") document.documentElement.classList.add("reduce-game-motion"); }, []);
+  useEffect(() => { setSound(!isMuted()); setQuality(pref("ib.quality", "high")); setVibrate(pref("ib.vibrate", "on") === "on"); setNotify(pref("ib.notify", "on") === "on"); setAutoAI(pref("ib.autoAI", "on") === "on"); if (pref("ib.quality", "high") === "low") document.documentElement.classList.add("reduce-game-motion"); }, []);
 
   const store = (k: string, v: string) => { localStorage.setItem(k, v); playSfx("click", 0.5); };
   const toggleSound = () => { const n = !sound; setSound(n); setMuted(!n); if (n) startAmbient(); };
@@ -81,6 +82,7 @@ export function SettingsPage({ onOpenStudio }: { onOpenStudio?: () => void }) {
         <Row icon={<Music2 />} title="الصوت والموسيقى" on={sound} onToggle={toggleSound} />
         <Row icon={<Vibrate />} title="الاهتزاز" on={vibrate} onToggle={() => { try { navigator.vibrate?.(vibrate ? 0 : [40]); } catch { /* not supported */ } setVibrate(!vibrate); store("ib.vibrate", vibrate ? "off" : "on"); }} />
         <Row icon={<Bell />} title="إشعارات عودة السفن" on={notify} onToggle={() => { setNotify(!notify); store("ib.notify", notify ? "off" : "on"); }} />
+        <Row icon={<Bot />} title="قبطاني الآلي يقاتل عني وأنا غائب" on={autoAI} onToggle={() => { setAutoAI(!autoAI); store("ib.autoAI", autoAI ? "off" : "on"); }} />
         <div className="cfg-row">
           <span className="cfg-ico"><Gauge /></span><b>جودة الرسوم</b>
           <div className="cfg-seg">

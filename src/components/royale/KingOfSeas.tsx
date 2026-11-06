@@ -6,6 +6,7 @@ import { playSfx } from "@/lib/sound";
 import { supabase } from "@/integrations/supabase/client";
 import { CaptainAvatar, nameSeed } from "@/components/GameSprite";
 import type { Player } from "@/lib/player";
+import { royaleScript, type RoyaleSeat } from "@/components/royale/royaleInject";
 
 const LOBBY_SECONDS = 10;
 const SLOTS = 10;
@@ -23,19 +24,40 @@ type Seat = { id: string; name: string; isBot: boolean; me?: boolean; avatar_ind
  * in place of `location.search`, and open it from a local blob URL — scripts run and it opens instantly.
  */
 let gamePromise: Promise<string> | null = null;
+let dragonPromise: Promise<string> | null = null;
+/** Download the dragon model once into memory so it appears the moment the battle starts. */
+function prepareDragon(): Promise<string> {
+  if (!dragonPromise) {
+    const src = new URL(dragonAsset.url, window.location.origin).href;
+    dragonPromise = fetch(src).then((r) => r.blob()).then((b) => URL.createObjectURL(new Blob([b], { type: "model/gltf-binary" }))).catch(() => src);
+  }
+  return dragonPromise;
+}
+/** Fetch + patch the game page text (cached). The launch step adds the captains and opens it. */
 export function prepareGame(): Promise<string> {
   if (!gamePromise) {
-    const dragon = new URL(dragonAsset.url, window.location.origin).href;
-    const search = `?autostart=1&dragon=${encodeURIComponent(dragon)}`;
-    gamePromise = fetch(gameAsset.url)
-      .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.text(); })
-      .then((html) => {
-        const patched = html.split("location.search").join(JSON.stringify(search));
-        return URL.createObjectURL(new Blob([patched], { type: "text/html" }));
+    gamePromise = Promise.all([
+      fetch(gameAsset.url).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.text(); }),
+      prepareDragon(),
+    ])
+      .then(([html, dragon]) => {
+        const search = `?autostart=1&dragon=${encodeURIComponent(dragon)}`;
+        return html
+          .split("location.search").join(JSON.stringify(search))
+          // dragon arrives right away and close by
+          .replace("spawnIn:5,", "spawnIn:1,")
+          .replace("V(s.pos.x+Math.cos(a)*260,45,s.pos.z+Math.sin(a)*260)", "V(s.pos.x+Math.cos(a)*110,45,s.pos.z+Math.sin(a)*110)")
+          // the island is reached by last-3-ships, not by dragon kills
+          .replace("if(W.kills>=2&&W.stage!==\"island\")", "if(false)");
       })
       .catch((e) => { gamePromise = null; throw e; });
   }
   return gamePromise;
+}
+function openGame(html: string, seats: RoyaleSeat[]): string {
+  const i = html.lastIndexOf("</body>");
+  const out = i >= 0 ? html.slice(0, i) + royaleScript(seats) + html.slice(i) : html + royaleScript(seats);
+  return URL.createObjectURL(new Blob([out], { type: "text/html" }));
 }
 
 export function KingOfSeasButton({ onClick }: { onClick: () => void }) {
@@ -60,14 +82,20 @@ export function KingOfSeas({ player, playerName, onClose }: { player?: Player | 
   const [bots, setBots] = useState<Seat[]>([]);
   const [phase, setPhase] = useState<"lobby" | "loading" | "game" | "error">("lobby");
   const [gameUrl, setGameUrl] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
   const myId = useRef(player?.id ?? `guest-${Math.random().toString(36).slice(2, 9)}`).current;
 
   const me: Seat = { id: myId, name: playerName || "القبطان", isBot: false, me: true, avatar_index: player?.avatar_index ?? nameSeed(playerName), avatar_url: player?.avatar_url ?? null, joined: joinedAt };
 
   // Start preloading immediately.
   useEffect(() => {
-    prepareGame().then(setGameUrl).catch(() => setGameUrl(null));
+    prepareGame().then(() => setReady(true)).catch(() => setReady(false));
   }, []);
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => { if ((e.data as { type?: string })?.type === "kos-exit") onClose(); };
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, [onClose]);
 
   // Shared waiting room: captains opening the lobby on other devices appear in real time.
   useEffect(() => {
@@ -117,11 +145,14 @@ export function KingOfSeas({ player, playerName, onClose }: { player?: Player | 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [left, phase, realSeats.length]);
 
+  const launched = useRef(false);
   const launch = () => {
+    if (launched.current) return;
+    launched.current = true;
     playSfx("click", 1);
-    if (gameUrl) { setPhase("game"); return; }
-    setPhase("loading");
-    prepareGame().then((u) => { setGameUrl(u); setPhase("game"); }).catch(() => setPhase("error"));
+    const list: RoyaleSeat[] = [...realSeats, ...bots].slice(0, SLOTS).map((s) => ({ name: s.name, isBot: s.isBot, me: !!s.me }));
+    if (!ready) setPhase("loading");
+    prepareGame().then((html) => { setGameUrl(openGame(html, list)); setPhase("game"); }).catch(() => { launched.current = false; setPhase("error"); });
   };
 
   const seats = [...realSeats, ...bots].slice(0, SLOTS);
