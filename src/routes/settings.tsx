@@ -1,6 +1,6 @@
-import { Bot, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bell, Camera, Gauge, LogOut, Music2, ShieldCheck, Sparkles, Vibrate, Waves } from "lucide-react";
+import { Bell, Bot, Camera, Gauge, LogOut, Music2, ShieldCheck, Sparkles, Vibrate, Waves } from "lucide-react";
 
 import { CaptainAvatar, nameSeed } from "@/components/GameSprite";
 import { CaptainGate } from "@/components/CaptainGate";
