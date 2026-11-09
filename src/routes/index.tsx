@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Moon, Sun } from "lucide-react";
+import "playroomkit/style.css";
 
 import { IntroLoader } from "@/components/IntroLoader";
 import { GameStore } from "@/components/GameStore";
@@ -28,7 +29,8 @@ import { ChatPage } from "@/routes/chat";
 import { SettingsPage } from "@/routes/settings";
 import { PirateProfile } from "@/components/battle/PirateProfile";
 import { BattleScreen } from "@/components/battle/BattleScreen";
-import { KingOfSeas, KingOfSeasButton, prepareGame } from "@/components/royale/KingOfSeas";
+import { KingOfSeasButton, prepareGame } from "@/components/royale/KingOfSeas";
+import { KingOfSeas } from "@/components/royale/PlayroomKingOfSeas";
 import { useDuelLobby } from "@/lib/duelNet";
 import { touchPresence } from "@/lib/player";
 import { DuelRequests } from "@/components/DuelRequests";

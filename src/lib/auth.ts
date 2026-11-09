@@ -76,9 +76,7 @@ export async function signInCaptain(username: string, password: string): Promise
   const norm = normalizeUsername(parsed.data.username);
   const email = isEmail
     ? parsed.data.username.trim().toLowerCase()
-    : norm === "admin"
-      ? "admin@islandbay.game"
-      : await syntheticEmail(norm);
+    : await syntheticEmail(norm);
   const { data: auth, error } = await supabase.auth.signInWithPassword({
     email,
     password: parsed.data.password,

@@ -90,17 +90,12 @@ export async function promoteMember(memberId: string, rank: Rank) {
   await supabase.from("tribe_members").update({ rank }).eq("id", memberId);
 }
 
-export async function addContribution(playerId: string, amount: number) {
-  const { data } = await supabase
-    .from("tribe_members")
-    .select("id, tribe_id, contribution")
-    .eq("player_id", playerId)
-    .maybeSingle();
-  if (!data) return;
-  const row = data as { id: string; tribe_id: string; contribution: number };
-  await supabase.from("tribe_members").update({ contribution: row.contribution + amount }).eq("id", row.id);
-  const { data: t } = await supabase.from("tribes").select("score").eq("id", row.tribe_id).maybeSingle();
-  if (t) await supabase.from("tribes").update({ score: (t as { score: number }).score + amount }).eq("id", row.tribe_id);
+export async function claimTribeQuest(playerId: string, questId: string): Promise<number> {
+  const { data, error } = await supabase.rpc("claim_tribe_quest", {
+    _player_id: playerId,
+    _quest_id: questId,
+  });
+  return error ? 0 : (data ?? 0);
 }
 
 /** Daily tribe quests — progress is contributed by playing the bay. */

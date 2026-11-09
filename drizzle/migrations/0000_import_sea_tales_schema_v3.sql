@@ -9,7 +9,8 @@ CREATE TABLE public.players (
   last_seen TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.players TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.players TO authenticated;
+GRANT UPDATE (name, theme_id, avatar_index, last_seen) ON public.players TO authenticated;
 GRANT ALL ON public.players TO service_role;
 ALTER TABLE public.players ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "players_select" ON public.players FOR SELECT TO authenticated USING (true);
@@ -27,16 +28,17 @@ CREATE TABLE public.friendships (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   requester_id UUID NOT NULL REFERENCES public.players(id) ON DELETE CASCADE,
   addressee_id UUID NOT NULL REFERENCES public.players(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'pending',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','declined')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (requester_id, addressee_id)
 );
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.friendships TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.friendships TO authenticated;
+GRANT UPDATE (status) ON public.friendships TO authenticated;
 GRANT ALL ON public.friendships TO service_role;
 ALTER TABLE public.friendships ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "friendships_select" ON public.friendships FOR SELECT TO authenticated USING (public.owns_player(requester_id) OR public.owns_player(addressee_id));
 CREATE POLICY "friendships_insert" ON public.friendships FOR INSERT TO authenticated WITH CHECK (public.owns_player(requester_id));
-CREATE POLICY "friendships_update" ON public.friendships FOR UPDATE TO authenticated USING (public.owns_player(requester_id) OR public.owns_player(addressee_id)) WITH CHECK (public.owns_player(requester_id) OR public.owns_player(addressee_id));
+CREATE POLICY "friendships_update" ON public.friendships FOR UPDATE TO authenticated USING (public.owns_player(addressee_id) AND status = 'pending') WITH CHECK (public.owns_player(addressee_id) AND status IN ('accepted','declined'));
 CREATE POLICY "friendships_delete" ON public.friendships FOR DELETE TO authenticated USING (public.owns_player(requester_id) OR public.owns_player(addressee_id));
 
 CREATE TABLE public.messages (
@@ -46,7 +48,7 @@ CREATE TABLE public.messages (
   body TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.messages TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.messages TO authenticated;
 GRANT ALL ON public.messages TO service_role;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "messages_select" ON public.messages FOR SELECT TO authenticated USING (recipient_id IS NULL OR public.owns_player(sender_id) OR public.owns_player(recipient_id));
@@ -65,28 +67,30 @@ CREATE TABLE public.tribes (
   owner_id UUID NOT NULL REFERENCES public.players(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.tribes TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.tribes TO authenticated;
+GRANT UPDATE (name, emblem, motto) ON public.tribes TO authenticated;
 GRANT ALL ON public.tribes TO service_role;
 ALTER TABLE public.tribes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "tribes_select" ON public.tribes FOR SELECT TO authenticated USING (true);
 CREATE POLICY "tribes_insert" ON public.tribes FOR INSERT TO authenticated WITH CHECK (public.owns_player(owner_id));
-CREATE POLICY "tribes_update" ON public.tribes FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "tribes_update" ON public.tribes FOR UPDATE TO authenticated USING (public.owns_player(owner_id)) WITH CHECK (public.owns_player(owner_id));
 CREATE POLICY "tribes_delete" ON public.tribes FOR DELETE TO authenticated USING (public.owns_player(owner_id));
 
 CREATE TABLE public.tribe_members (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   tribe_id UUID NOT NULL REFERENCES public.tribes(id) ON DELETE CASCADE,
   player_id UUID NOT NULL UNIQUE REFERENCES public.players(id) ON DELETE CASCADE,
-  rank TEXT NOT NULL DEFAULT 'member',
+  rank TEXT NOT NULL DEFAULT 'member' CHECK (rank IN ('member','officer','leader')),
   contribution INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.tribe_members TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.tribe_members TO authenticated;
+GRANT UPDATE (rank) ON public.tribe_members TO authenticated;
 GRANT ALL ON public.tribe_members TO service_role;
 ALTER TABLE public.tribe_members ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "tribe_members_select" ON public.tribe_members FOR SELECT TO authenticated USING (true);
 CREATE POLICY "tribe_members_insert" ON public.tribe_members FOR INSERT TO authenticated WITH CHECK (public.owns_player(player_id));
-CREATE POLICY "tribe_members_update" ON public.tribe_members FOR UPDATE TO authenticated USING (public.owns_player(player_id) OR EXISTS (SELECT 1 FROM public.tribes t WHERE t.id = tribe_id AND public.owns_player(t.owner_id))) WITH CHECK (true);
+CREATE POLICY "tribe_members_update" ON public.tribe_members FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.tribes t WHERE t.id = tribe_id AND public.owns_player(t.owner_id))) WITH CHECK (EXISTS (SELECT 1 FROM public.tribes t WHERE t.id = tribe_id AND public.owns_player(t.owner_id)));
 CREATE POLICY "tribe_members_delete" ON public.tribe_members FOR DELETE TO authenticated USING (public.owns_player(player_id) OR EXISTS (SELECT 1 FROM public.tribes t WHERE t.id = tribe_id AND public.owns_player(t.owner_id)));
 
 CREATE TABLE public.fleet_layout (
@@ -176,14 +180,4 @@ CREATE POLICY "own catches read" ON public.catches FOR SELECT TO authenticated U
 CREATE POLICY "own catches add" ON public.catches FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid() AND qty BETWEEN 1 AND 50);
 CREATE POLICY "own catches sell" ON public.catches FOR DELETE TO authenticated USING (user_id = auth.uid());
 
-CREATE OR REPLACE FUNCTION public.grant_admin_to_owner_account()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF lower(NEW.email) = 'admin@islandbay.game' THEN
-    INSERT INTO public.user_roles(user_id, role) VALUES (NEW.id, 'admin') ON CONFLICT DO NOTHING;
-  END IF;
-  RETURN NEW;
-END; $$;
-REVOKE ALL ON FUNCTION public.grant_admin_to_owner_account() FROM PUBLIC, anon, authenticated;
-CREATE TRIGGER on_auth_user_created_grant_admin AFTER INSERT ON auth.users
-FOR EACH ROW EXECUTE FUNCTION public.grant_admin_to_owner_account();
+-- Privileged roles are assigned only through an authorized administrative workflow.

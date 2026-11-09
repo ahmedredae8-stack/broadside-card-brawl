@@ -9,7 +9,7 @@ import { playSfx } from "@/lib/sound";
 import {
   EMBLEMS,
   TRIBE_QUESTS,
-  addContribution,
+  claimTribeQuest,
   createTribe,
   emblemSrc,
   joinTribe,
@@ -179,7 +179,7 @@ export function TribesPage() {
                           type="button"
                           onClick={async () => {
                             playSfx("click", 0.65);
-                            if (player) await addContribution(player.id, q.reward);
+                            if (player) await claimTribeQuest(player.id, q.id);
                             void refresh();
                           }}
                         >

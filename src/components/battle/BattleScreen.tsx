@@ -207,6 +207,7 @@ function Arena({ me, foe, seed, onClose, lab, online }: { me: Player; foe: Playe
         }
       },
       onFoeGone: () => { if (!overRef.current) { shout("انقطع اتصال الخصم!"); window.setTimeout(finish, 400); } },
+      onError: () => shout("تعذّر الاتصال بغرفة Playroom — تحقّق من إعداد معرف اللعبة"),
     });
     session.current = s;
     return () => { s.close(); session.current = null; };

@@ -11,7 +11,9 @@
  */
 import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import type { PlayerState } from "playroomkit";
 import { supabase } from "@/integrations/supabase/client";
+import { getPlayroomParticipants, joinPlayroomRoom } from "@/lib/playroom";
 import type { Player } from "@/lib/player";
 import type { DuelFireEvent } from "@/fx/weapons/playFireEvent";
 import type { Side } from "@/game/duel";
@@ -206,54 +208,83 @@ export function useDuelLobby(me: Player | null, queueing: boolean) {
   return { others, incoming, outgoing, challenge, respond, cancelOutgoing };
 }
 
-/** Live battle channel: replays every play on both clients. */
+/** Live battle state is carried by Playroom; Supabase remains the account and request lobby. */
+type DuelEnvelope = { id: string; event: DuelWire };
+
+function playroomRoomCode(matchId: string) {
+  return matchId.replace(/[^a-z0-9]/gi, "").toUpperCase();
+}
+
 export class DuelSession {
-  private chan: RealtimeChannel;
   private onEvent: (ev: DuelWire) => void;
   private onFoeGone: () => void;
+  private onError: (() => void) | undefined;
+  private player: PlayerState | null = null;
+  private eventKey: string;
+  private seen = new Set<string>();
+  private pending: DuelEnvelope[] = [];
   private foeSeen = false;
   private lastSeen = 0;
   private timer: number;
   private closed = false;
+  private notified = false;
 
-  private constructor(matchId: string, role: "host" | "guest", handlers: { onEvent: (ev: DuelWire) => void; onFoeGone: () => void }) {
+  private constructor(matchId: string, _role: "host" | "guest", handlers: { onEvent: (ev: DuelWire) => void; onFoeGone: () => void; onError?: () => void }) {
     this.onEvent = handlers.onEvent;
     this.onFoeGone = handlers.onFoeGone;
-    this.chan = supabase.channel(`duel-${matchId}`, { config: { presence: { key: `p-${role}` } } });
-
-    this.chan.on("broadcast", { event: "duel" }, ({ payload }) => this.onEvent(payload as DuelWire));
-
-    const watch = () => {
-      const state = this.chan.presenceState() as Record<string, { role: string }[]>;
-      const foeHere = Object.values(state).flat().some((m) => m.role && m.role !== role);
-      if (foeHere) { this.foeSeen = true; this.lastSeen = Date.now(); }
-    };
-    this.chan.on("presence", { event: "sync" }, watch);
-    this.chan.on("presence", { event: "join" }, watch);
-
-    this.timer = window.setInterval(() => {
-      watch();
-      if (this.foeSeen && Date.now() - this.lastSeen > 9_000) { this.foeSeen = false; if (!this.closed) this.onFoeGone(); }
-    }, 2_000);
-
-    void this.chan.subscribe((status) => {
-      if (status === "SUBSCRIBED") void this.chan.track({ role });
-    });
+    this.onError = handlers.onError;
+    this.eventKey = `duel-${playroomRoomCode(matchId)}-events`;
+    this.timer = window.setInterval(() => this.poll(), 250);
+    void joinPlayroomRoom({ roomCode: playroomRoomCode(matchId), maxPlayersPerRoom: 2, skipLobby: true })
+      .then((player) => {
+        if (this.closed) { player.leaveRoom(); return; }
+        this.player = player;
+        for (const event of this.pending.splice(0)) this.publish(event);
+      })
+      .catch(() => { if (!this.closed) this.onError?.(); });
   }
 
-  static open(matchId: string, role: "host" | "guest", handlers: { onEvent: (ev: DuelWire) => void; onFoeGone: () => void }): DuelSession {
+  static open(matchId: string, role: "host" | "guest", handlers: { onEvent: (ev: DuelWire) => void; onFoeGone: () => void; onError?: () => void }): DuelSession {
     return new DuelSession(matchId, role, handlers);
   }
 
   send(ev: DuelWire): void {
     if (this.closed) return;
-    void this.chan.send({ type: "broadcast", event: "duel", payload: ev });
+    const envelope = { id: crypto.randomUUID(), event: ev };
+    if (!this.player) this.pending.push(envelope);
+    else this.publish(envelope);
+  }
+
+  private publish(event: DuelEnvelope) {
+    if (!this.player) return;
+    const current = this.player.getState(this.eventKey);
+    const queue = Array.isArray(current) ? current as DuelEnvelope[] : [];
+    this.player.setState(this.eventKey, [...queue, event].slice(-32), true);
+  }
+
+  private poll() {
+    if (this.closed || !this.player) return;
+    const foes = getPlayroomParticipants().filter((p) => p.id !== this.player?.id);
+    if (foes.length) { this.foeSeen = true; this.lastSeen = Date.now(); this.notified = false; }
+    for (const foe of foes) {
+      const current = foe.getState(this.eventKey);
+      if (!Array.isArray(current)) continue;
+      for (const envelope of current as DuelEnvelope[]) {
+        if (!envelope?.id || this.seen.has(envelope.id)) continue;
+        this.seen.add(envelope.id);
+        this.onEvent(envelope.event);
+      }
+    }
+    if (this.foeSeen && !foes.length && Date.now() - this.lastSeen > 9_000 && !this.notified) {
+      this.notified = true;
+      this.onFoeGone();
+    }
   }
 
   close(): void {
     if (this.closed) return;
     this.closed = true;
     window.clearInterval(this.timer);
-    void supabase.removeChannel(this.chan);
+    try { this.player?.leaveRoom(); } catch { /* The room may already be closed. */ }
   }
 }

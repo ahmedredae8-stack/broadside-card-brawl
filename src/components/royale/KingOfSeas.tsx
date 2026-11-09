@@ -75,7 +75,7 @@ export function KingOfSeasButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function KingOfSeas({ player, playerName, onClose }: { player?: Player | null; playerName: string; onClose: () => void }) {
+export function LegacyKingOfSeas({ player, playerName, onClose }: { player?: Player | null; playerName: string; onClose: () => void }) {
   const [now, setNow] = useState(() => Date.now());
   const [joinedAt] = useState(() => Date.now());
   const [humans, setHumans] = useState<Seat[]>([]);

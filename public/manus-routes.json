@@ -1,0 +1,56 @@
+{
+  "routes": [
+    {
+      "path": "/",
+      "title": "Throne of Seas"
+    },
+    {
+      "path": "/admin",
+      "title": "Admin"
+    },
+    {
+      "path": "/auth",
+      "title": "Authentication"
+    },
+    {
+      "path": "/chat",
+      "title": "Chat"
+    },
+    {
+      "path": "/fish-market",
+      "title": "Fish Market"
+    },
+    {
+      "path": "/friends",
+      "title": "Friends"
+    },
+    {
+      "path": "/sea-studio",
+      "title": "Sea Studio"
+    },
+    {
+      "path": "/settings",
+      "title": "Settings"
+    },
+    {
+      "path": "/shields-test",
+      "title": "Shields Test"
+    },
+    {
+      "path": "/shipyard",
+      "title": "Shipyard"
+    },
+    {
+      "path": "/tribes",
+      "title": "Tribes"
+    },
+    {
+      "path": "/admin/battle",
+      "title": "Admin Battle"
+    },
+    {
+      "path": "/village/:id",
+      "title": "Village"
+    }
+  ]
+}

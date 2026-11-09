@@ -339,6 +339,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_tribe_quest: { Args: { _player_id: string; _quest_id: string }; Returns: number }
       owns_player: { Args: { _player_id: string }; Returns: boolean }
     }
     Enums: {
